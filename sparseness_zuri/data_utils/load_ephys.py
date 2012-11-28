@@ -48,7 +48,7 @@ scale_without_crop_SOM = {'120119': 1,
 
 
 def load_movie_data(expdate):
-    dat = np.load(data_path + 'ephys/som_movies/' + expdate + '_processed.npz', 
+    dat = np.load(data_path + 'ephys/som/' + expdate + '_processed.npz', 
                   'rb')
     return dat
 
@@ -59,7 +59,7 @@ def load_EphysData_SOM():
     mat = scipy.io.loadmat(extern_data_path +
                            'Sparseness/EphysData/analysis/EphysData_SOM.mat')
     som_dir = extern_data_path + 'Sparseness/EphysData/SOM/'
-    mov_path = data_path + 'ephys/som_movies/'
+    mov_path = data_path + 'ephys/som/'
     dat = mat['EphysData_SOM']
 
     all_dat = {}

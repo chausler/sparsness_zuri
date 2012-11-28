@@ -268,7 +268,7 @@ if __name__=="__main__":
     ellipse(20, 20)
     ephys = load_EphysData_SOM()
     dat_path = startup.data_path + 'ephys/som/'
-    fig_path = startup.fig_path + 'ephys/som/movies/'
+    fig_path = startup.fig_path + 'ephys/som/'
     for e in ephys.values():
         print 'recording ', e['expdate']
 #        if e['expdate'] != '120601':

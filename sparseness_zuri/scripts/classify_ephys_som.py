@@ -10,9 +10,11 @@ from data_utils.load_ephys import load_EphysData_SOM, load_movie_data
 from sklearn.linear_model import LinearRegression as clf
 #from sklearn.linear_model import SGDRegressor as clf
 import itertools
-
+import os
 # Sub directory of the figure path to put the plots in
 fig_path = startup.fig_path + 'ephys/som/pred/'
+if not os.path.exists(fig_path):
+    os.makedirs(fig_path)
 
 # what type of correlation to use. spearmanr or pearsonr
 corr = spearmanr
@@ -32,15 +34,18 @@ clr4 = np.array([200, 105, 75]) / 255.
 # Bin the flow directions into a number of general directions based on
 # size of bin_ang
 def bin_flow(flow):
-
-    new_flow = []
-    for f in flow:
-        n, _ = np.histogram(np.degrees(f[0]), bins=bins)
-        n[0] += n[-1]
-        n = n[:-1]
-        new_flow.append(n.tolist() + [f[1]])
-
+    all_flows = []
+    for dim in flow:
+        new_flow = []
+        for f in dim:
+            n, _ = np.histogram(np.degrees(f[0]), bins=bins)
+            n[0] += n[-1]
+            n = n[:-1]
+            new_flow.append(n.tolist() + [f[1]])
+        all_flows.append(new_flow)
     new_flow = np.array(new_flow, dtype=np.float)
+    if len(new_flow.shape) < 3:
+        new_flow = new_flow[np.newaxis, :, :]
     return new_flow
 
 
@@ -146,6 +151,7 @@ for num_combs in range(0, len(combs)):
         surr_corrs = []
         mask_corrs = []
         whole_corrs = []
+
         for i, e in enumerate(ephys.values()):
             expdate = e['expdate']
             print 'doing ', e['expdate']
@@ -155,20 +161,23 @@ for num_combs in range(0, len(combs)):
             flow_mask = mov['flow_mask']
             four_mask = mov['four_mask']
             four_mask_shape = four_mask.shape[1:]
-            four_mask = four_mask.reshape(four_mask.shape[0], -1)
+            four_mask = four_mask.reshape(four_mask.shape[0],
+                                          four_mask.shape[1], -1)
             lum_surr = mov['lum_surr']
             con_surr = mov['con_surr']
             flow_surr = mov['flow_surr']
             four_surr = mov['four_surr']
             four_surr_shape = four_surr.shape[1:]
-            four_surr = four_surr.reshape(four_surr.shape[0], -1)
+            four_surr = four_surr.reshape(four_surr.shape[0],
+                                          four_surr.shape[1], -1)
             lum_whole = mov['lum_whole']
             con_whole = mov['con_whole']
             flow_whole = mov['flow_whole']
             four_whole = mov['four_whole']
             four_whole_shape = four_whole.shape[1:]
-            four_whole = four_whole.reshape(four_whole.shape[0], -1)
-            flow_mask = bin_flow(flow_mask)
+            four_whole = four_whole.reshape(four_whole.shape[0],
+                                            four_whole.shape[1], -1)            
+            flow_mask = bin_flow(flow_mask)            
             flow_surr = bin_flow(flow_surr)
             flow_whole = bin_flow(flow_whole)
 
@@ -185,130 +194,151 @@ for num_combs in range(0, len(combs)):
                 if targ_type == 'Center':
                     source = e['psth_c']
                     if 'Luminance' in comb:
-                        all_dat = append_Nones(all_dat,
-                                               lum_mask[:, np.newaxis], 1)
-                        idx_bar += [all_dat.shape[1] - 1]
-                        lbl_bar += ['Luminance']
+                        for l in lum_mask:
+                            all_dat = append_Nones(all_dat,
+                                               l[:, np.newaxis], 1)
+                            idx_bar += [all_dat.shape[1] - 1]
+                            lbl_bar += ['Luminance']
                     if 'Contrast' in comb:
-                        all_dat = append_Nones(all_dat,
-                                               con_mask[:, np.newaxis], 1)
-                        idx_bar += [all_dat.shape[1] - 1]
-                        lbl_bar += ['Contrast']
+                        for c in con_mask:
+                            all_dat = append_Nones(all_dat,
+                                                   c[:, np.newaxis], 1)
+                            idx_bar += [all_dat.shape[1] - 1]
+                            lbl_bar += ['Contrast']
                     if 'Flow Directions' in comb:
-                        if all_dat != None:
-                            pre_len = all_dat.shape[1]
-                        else:
-                            pre_len = 0
-                        all_dat = append_Nones(all_dat,
-                                               flow_mask[:, :-1], 1)
-                        idx_flow += [range(pre_len, all_dat.shape[1])]
+                        for f in flow_mask:
+                            if all_dat != None:
+                                pre_len = all_dat.shape[1]
+                            else:
+                                pre_len = 0
+                            all_dat = append_Nones(all_dat,
+                                                   f[:, :-1], 1)
+                            idx_flow += [range(pre_len, all_dat.shape[1])]
                     if 'Flow Strength' in comb:
-                        all_dat = append_Nones(all_dat,
-                                               flow_mask[:, -1:], 1)
-                        idx_bar += [all_dat.shape[1] - 1]
-                        lbl_bar += ['Flow Vel']
+                        for f in flow_mask:
+                            all_dat = append_Nones(all_dat,
+                                                   f[:, -1:], 1)
+                            idx_bar += [all_dat.shape[1] - 1]
+                            lbl_bar += ['Flow Vel']
                     if 'Fourier' in comb:
-                        if all_dat != None:
-                            pre_len = all_dat.shape[1]
-                        else:
-                            pre_len = 0
-                        all_dat = append_Nones(all_dat, four_mask, 1)
-                        idx_four += [range(pre_len, all_dat.shape[1])]
-                        four_shape.append(four_mask_shape)
-
+                        for f in four_mask:
+                            if all_dat != None:
+                                pre_len = all_dat.shape[1]
+                            else:
+                                pre_len = 0
+                            all_dat = append_Nones(all_dat, f, 1)
+                            idx_four += [range(pre_len, all_dat.shape[1])]
+                            four_shape.append(four_mask_shape)
                 elif targ_type == 'Surround':
                     source = e['psth_s']
                     if 'Luminance' in comb:
-                        all_dat = append_Nones(all_dat,
-                                               lum_surr[:, np.newaxis], 1)
-                        idx_bar += [all_dat.shape[1] - 1]
-                        lbl_bar += ['Luminance']
+                        for l in lum_surr:
+                            all_dat = append_Nones(all_dat,
+                                                   l[:, np.newaxis], 1)
+                            idx_bar += [all_dat.shape[1] - 1]
+                            lbl_bar += ['Luminance']
                     if 'Contrast' in comb:
-                        all_dat = append_Nones(all_dat,
-                                               con_surr[:, np.newaxis], 1)
-                        idx_bar += [all_dat.shape[1] - 1]
-                        lbl_bar += ['Contrast']
+                        for c in con_surr:
+                            all_dat = append_Nones(all_dat,
+                                                   c[:, np.newaxis], 1)
+                            idx_bar += [all_dat.shape[1] - 1]
+                            lbl_bar += ['Contrast']
                     if 'Flow Directions' in comb:
-                        if all_dat != None:
-                            pre_len = all_dat.shape[1]
-                        else:
-                            pre_len = 0
-                        all_dat = append_Nones(all_dat, flow_surr[:, :-1], 1)
-                        idx_flow += [range(pre_len, all_dat.shape[1])]
+                        for f in flow_surr:
+                            if all_dat != None:
+                                pre_len = all_dat.shape[1]
+                            else:
+                                pre_len = 0
+                            all_dat = append_Nones(all_dat, f[:, :-1], 1)
+                            idx_flow += [range(pre_len, all_dat.shape[1])]
                     if 'Flow Strength' in comb:
-                        all_dat = append_Nones(all_dat, flow_surr[:, -1:], 1)
-                        idx_bar += [all_dat.shape[1] - 1]
-                        lbl_bar += ['Flow Vel']
+                        for f in flow_surr:
+                            all_dat = append_Nones(all_dat, f[:, -1:], 1)
+                            idx_bar += [all_dat.shape[1] - 1]
+                            lbl_bar += ['Flow Vel']
                     if 'Fourier' in comb:
-                        if all_dat != None:
-                            pre_len = all_dat.shape[1]
-                        else:
-                            pre_len = 0
-                        all_dat = append_Nones(all_dat, four_surr, 1)
-                        idx_four += [range(pre_len, all_dat.shape[1])]
-                        four_shape.append(four_mask_shape)
+                        for f in four_surr:
+                            if all_dat != None:
+                                pre_len = all_dat.shape[1]
+                            else:
+                                pre_len = 0
+                            all_dat = append_Nones(all_dat, f, 1)
+                            idx_four += [range(pre_len, all_dat.shape[1])]
+                            four_shape.append(four_mask_shape)
 
                 elif targ_type == 'Whole':
                     source = e['psth_w']
                     if 'Luminance' in comb:
-                        all_dat = append_Nones(all_dat,
-                                               lum_mask[:, np.newaxis], 1)
-                        idx_bar += [all_dat.shape[1] - 1]
-                        lbl_bar += ['Luminance']
+                        for l in lum_mask:
+                            all_dat = append_Nones(all_dat,
+                                               l[:, np.newaxis], 1)
+                            idx_bar += [all_dat.shape[1] - 1]
+                            lbl_bar += ['Luminance']
                     if 'Contrast' in comb:
-                        all_dat = append_Nones(all_dat,
-                                               con_mask[:, np.newaxis], 1)
-                        idx_bar += [all_dat.shape[1] - 1]
-                        lbl_bar += ['Contrast']
+                        for c in con_mask:
+                            all_dat = append_Nones(all_dat,
+                                                   c[:, np.newaxis], 1)
+                            idx_bar += [all_dat.shape[1] - 1]
+                            lbl_bar += ['Contrast']
                     if 'Flow Directions' in comb:
-                        if all_dat != None:
-                            pre_len = all_dat.shape[1]
-                        else:
-                            pre_len = 0
-                        all_dat = append_Nones(all_dat, flow_mask[:, :-1], 1)
-                        idx_flow += [range(pre_len, all_dat.shape[1])]
+                        for f in flow_mask:
+                            if all_dat != None:
+                                pre_len = all_dat.shape[1]
+                            else:
+                                pre_len = 0
+                            all_dat = append_Nones(all_dat,
+                                                   f[:, :-1], 1)
+                            idx_flow += [range(pre_len, all_dat.shape[1])]
                     if 'Flow Strength' in comb:
-                        all_dat = append_Nones(all_dat, flow_mask[:, -1:], 1)
-                        idx_bar += [all_dat.shape[1] - 1]
-                        lbl_bar += ['Flow Vel']
+                        for f in flow_mask:
+                            all_dat = append_Nones(all_dat,
+                                                   f[:, -1:], 1)
+                            idx_bar += [all_dat.shape[1] - 1]
+                            lbl_bar += ['Flow Vel']
                     if 'Fourier' in comb:
-                        if all_dat != None:
-                            pre_len = all_dat.shape[1]
-                        else:
-                            pre_len = 0
-                        all_dat = append_Nones(all_dat, four_mask, 1)
-                        idx_four += [range(pre_len, all_dat.shape[1])]
-                        four_shape.append(four_mask_shape)
+                        for f in four_mask:
+                            if all_dat != None:
+                                pre_len = all_dat.shape[1]
+                            else:
+                                pre_len = 0
+                            all_dat = append_Nones(all_dat, f, 1)
+                            idx_four += [range(pre_len, all_dat.shape[1])]
+                            four_shape.append(four_mask_shape)
 
                     if 'Luminance' in comb:
-                        all_dat = append_Nones(all_dat,
-                                               lum_surr[:, np.newaxis], 1)
-                        idx_bar += [all_dat.shape[1] - 1]
-                        lbl_bar += ['Luminance']
+                        for l in lum_surr:
+                            all_dat = append_Nones(all_dat,
+                                                   l[:, np.newaxis], 1)
+                            idx_bar += [all_dat.shape[1] - 1]
+                            lbl_bar += ['Luminance']
                     if 'Contrast' in comb:
-                        all_dat = append_Nones(all_dat,
-                                               con_surr[:, np.newaxis], 1)
-                        idx_bar += [all_dat.shape[1] - 1]
-                        lbl_bar += ['Contrast']
+                        for c in con_surr:
+                            all_dat = append_Nones(all_dat,
+                                                   c[:, np.newaxis], 1)
+                            idx_bar += [all_dat.shape[1] - 1]
+                            lbl_bar += ['Contrast']
                     if 'Flow Directions' in comb:
-                        if all_dat != None:
-                            pre_len = all_dat.shape[1]
-                        else:
-                            pre_len = 0
-                        all_dat = append_Nones(all_dat, flow_surr[:, :-1], 1)
-                        idx_flow += [range(pre_len, all_dat.shape[1])]
+                        for f in flow_surr:
+                            if all_dat != None:
+                                pre_len = all_dat.shape[1]
+                            else:
+                                pre_len = 0
+                            all_dat = append_Nones(all_dat, f[:, :-1], 1)
+                            idx_flow += [range(pre_len, all_dat.shape[1])]
                     if 'Flow Strength' in comb:
-                        all_dat = append_Nones(all_dat, flow_surr[:, -1:], 1)
-                        idx_bar += [all_dat.shape[1] - 1]
-                        lbl_bar += ['Flow Vel']
+                        for f in flow_surr:
+                            all_dat = append_Nones(all_dat, f[:, -1:], 1)
+                            idx_bar += [all_dat.shape[1] - 1]
+                            lbl_bar += ['Flow Vel']
                     if 'Fourier' in comb:
-                        if all_dat != None:
-                            pre_len = all_dat.shape[1]
-                        else:
-                            pre_len = 0
-                        all_dat = append_Nones(all_dat, four_surr, 1)
-                        idx_four += [range(pre_len, all_dat.shape[1])]
-                        four_shape.append(four_mask_shape)
+                        for f in four_surr:
+                            if all_dat != None:
+                                pre_len = all_dat.shape[1]
+                            else:
+                                pre_len = 0
+                            all_dat = append_Nones(all_dat, f, 1)
+                            idx_four += [range(pre_len, all_dat.shape[1])]
+                            four_shape.append(four_mask_shape)
 
                 all_dat = np.tile(all_dat, [source.shape[0], 1])
                 regr = clf()
@@ -338,7 +368,7 @@ for num_combs in range(0, len(combs)):
                 [crr_targ, p_targ] = xcorr.mean(0)
 
                 # only do plots for the fourier trained classifier
-                if len(comb) == 1 and comb[0] == 'Fourier':
+                if False and len(comb) == 1 and comb[0] == 'Fourier':
                     fig = plt.figure(figsize=(14, 9))
                     fig.set_facecolor('white')
                     plt.suptitle('Experiment: %s Target: %s' %
@@ -364,6 +394,7 @@ for num_combs in range(0, len(combs)):
                         plot_four(four_weights, ylims, 247 + jj, title=title)
                     plt.subplots_adjust(left=0.05, bottom=0.06, right=0.97,
                                         top=0.87, wspace=0.3, hspace=0.34)
+                    plt.show()
                     fig.savefig(fname + '.eps')
                     fig.savefig(fname + '.png')
                     plt.close(fig)

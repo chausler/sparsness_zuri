@@ -90,7 +90,8 @@ def get_flow(flow, maskSizePixel, maskLocationPixel):
             tmp_sum.append([theta, r])
         surround_sum.append(tmp_sum)
 
-    return np.array(whole_sum), np.array(masked_sum), np.array(surround_sum)
+    return np.array(whole_sum)[np.newaxis, :, :],\
+         np.array(masked_sum)[np.newaxis, :, :], np.array(surround_sum)
 
 
 def get_fourier2D(movie, dim_lim=7):
@@ -127,18 +128,18 @@ def get_fourier2D(movie, dim_lim=7):
 
 
 def plot_movie(lum, con, flow, four, movie, fname):
-    num_frames = len(lum)
+    num_frames = lum.shape[1]
     fig = plt.figure(figsize=(16, 7))
     fig.set_facecolor('white')
 
     ax = plt.subplot(231)
-    plt.plot(lum)
+    plt.plot(lum[0])
     plt.xlim(0, num_frames)
     plt.title('Luminence')
     adjust_spines(ax, ['left', 'bottom'])
 
     ax = plt.subplot(234)
-    plt.plot(con)
+    plt.plot(con[0])
     plt.xlim(0, num_frames)
     plt.title('Contrast')
     adjust_spines(ax, ['left', 'bottom'])
@@ -146,32 +147,30 @@ def plot_movie(lum, con, flow, four, movie, fname):
     total_plots = 4
     frames = np.linspace(0, num_frames - 1, total_plots).astype(np.int)
     print 'plotting frames ', frames
-    lims = [four[frames].min(), four[frames].max()]
+    lims = [four[0, frames].min(), four[0, frames].max()]
     for i, _ in enumerate(frames):
         ax = plt.subplot(3, 6, 3 + i, aspect='equal')
-        plt.imshow(movie[i].T, cmap=plt.cm.gray)
+        plt.imshow(movie[0, i].T, cmap=plt.cm.gray)
         adjust_spines(ax, [])
         if i == 0:
             plt.title('Movie')
 
         ax = plt.subplot(3, 6, 9 + i, aspect='equal')
-        plt.imshow(four[i].T, cmap=plt.cm.gray, interpolation='None')
+        plt.imshow(four[0, i].T, cmap=plt.cm.gray, interpolation='None')
         plt.clim(lims)
         if i == 0:
             adjust_spines(ax, ['left', 'bottom'])
-            plt.title('Spatial Fourier')
-            tix = np.array(plt.xticks()[0], dtype=np.float)
-            plt.xticks(np.linspace(tix.min(), tix.max(), 4).astype(np.int))
-            tix = np.array(plt.yticks()[0])
-            plt.yticks(np.linspace(tix.min(), tix.max(), 4).astype(np.int))
+            plt.title('Spatial Fourier')            
+            plt.xticks(np.linspace(0, four[0, i].shape[1], 4).astype(np.int))            
+            plt.yticks(np.linspace(0, four[0, i].shape[0], 4).astype(np.int))
             plt.colorbar()
         else:
             adjust_spines(ax, [])
 
         ax = plt.subplot(3, 6, 15 + i, polar=True)
-        plt.plot([0, flow[i, 0]], [0, flow[i, 1]], '-o', color='0.3',
+        plt.plot([0, flow[0, i, 0]], [0, flow[0, i, 1]], '-o', color='0.3',
                  linewidth=2)
-        plt.ylim(0, flow[:, 1].max())
+        plt.ylim(0, flow[0, :, 1].max())
         for _, spine in ax.spines.iteritems():
                 spine.set_color('none')  # don't draw spine
         #plt.adjust_spines(ax,[])
@@ -181,11 +180,11 @@ def plot_movie(lum, con, flow, four, movie, fname):
         else:
             plt.title('Flow')
         plt.xticks([0, np.pi / 2, np.pi, np.pi * 3. / 2])
-        plt.yticks(np.linspace(0, flow[:, 1].max(), 4).astype(np.int))
+        plt.yticks(np.linspace(0, flow[0, :, 1].max(), 4).astype(np.int))
 
     plt.subplots_adjust(left=0.04, bottom=0.06, right=0.96, top=0.95,
                          wspace=0.20, hspace=0.35)
-        #adjust_spines(ax,[])
+    #adjust_spines(ax,[])
     fig.savefig(fname + '.eps')
     fig.savefig(fname + '.png')
     plt.close(fig)
@@ -253,7 +252,6 @@ def plot_surround(lum, con, flow, four, movie, fname):
 
     plt.subplots_adjust(left=0.04, bottom=0.06, right=0.96, top=0.95,
                          wspace=0.50, hspace=0.5)
-    #plt.show()
     fig.savefig(fname + '.eps')
     fig.savefig(fname + '.png')
     plt.close(fig)
@@ -303,7 +301,9 @@ if __name__ == "__main__":
     #ellipse(20, 20)
     ephys = load_EphysData_SOM()
     dat_path = startup.data_path + 'ephys/som/'
-    fig_path = startup.fig_path + 'ephys/som/'
+    fig_path = startup.fig_path + 'ephys/som/movies'
+    if not os.path.exists(fig_path):
+        os.makedirs(fig_path)
     for e in ephys.values():
         print 'recording ', e['expdate']
 #        if e['expdate'] != '120601':
@@ -334,9 +334,9 @@ if __name__ == "__main__":
                       :e['adjustedMovResolution'][1]]
         masked, surround = get_masked_data(movie,
                                     e['maskSizePixel'], e['maskLocationPixel'])
-        lum_mask = get_luminance(masked)
-        con_mask = get_contrast(masked)
-        four_mask = get_fourier2D(masked)
+        lum_mask = get_luminance(masked)[np.newaxis, :]
+        con_mask = get_contrast(masked)[np.newaxis, :]
+        four_mask = get_fourier2D(masked)[np.newaxis, :, :, :]
 
         lum_surr = []
         con_surr = []
@@ -349,12 +349,13 @@ if __name__ == "__main__":
         con_surr = np.array(con_surr)
         four_surr = np.array(four_surr)
 
-        lum_whole = get_luminance(movie)
-        con_whole = get_contrast(movie)
-        four_whole = get_fourier2D(movie)
+        lum_whole = get_luminance(movie)[np.newaxis, :]
+        con_whole = get_contrast(movie)[np.newaxis, :]
+        four_whole = get_fourier2D(movie)[np.newaxis, :, :, :]
         flow_whole, flow_mask, flow_surr = get_flow(flow,
                                     e['maskSizePixel'], e['maskLocationPixel'])
-
+        movie = movie[np.newaxis, :, :, :]
+        masked = masked[np.newaxis, :, :, :]
         np.savez(dat_path + e['expdate'] + '_processed.npz',
                    lum_mask=lum_mask, con_mask=con_mask, flow_mask=flow_mask,
                    four_mask=four_mask, masked=masked,

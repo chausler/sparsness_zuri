@@ -1,7 +1,11 @@
+import matplotlib
+# force plots to file. no display. comment out to use plt.show()
+matplotlib.use('Agg')
 import numpy as np
 import sys
 import pylab as plt
 sys.path.append('..')
+
 #sys.path = ['/home/chris/programs/aa_scikits/scikit-learn'] + sys.path
 import startup
 from scipy.stats import pearsonr, spearmanr

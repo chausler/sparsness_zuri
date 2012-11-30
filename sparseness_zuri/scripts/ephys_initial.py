@@ -5,9 +5,12 @@ import numpy as np
 import pylab as plt
 from plotting.utils import adjust_spines
 from data_utils.load_ephys import load_EphysData_SOM
-
+import os
 # Sub directory of the figure path to put the plots in
 fig_path = fig_path + 'ephys/som/'
+if not os.path.exists(fig_path):
+    os.makedirs(fig_path)
+
 dat = load_EphysData_SOM()
 
 for d in dat.values():

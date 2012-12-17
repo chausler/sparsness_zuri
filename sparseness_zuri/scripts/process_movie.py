@@ -1,6 +1,8 @@
+import matplotlib
+# force plots to file. no display. comment out to use plt.show()
+matplotlib.use('Agg')
 import numpy.fft as fft
 import numpy as np
-
 import sys
 import math
 import scipy.io
@@ -63,7 +65,6 @@ def get_flow(flow, maskSizePixel, maskLocationPixel):
     masked, surround = get_masked_data(flow, maskSizePixel, maskLocationPixel)
     masked_sum = []
     whole_sum = []
-    surround_sum = []
 
     for m in masked:
         m = m.reshape(-1, 2)
@@ -160,8 +161,8 @@ def plot_movie(lum, con, flow, four, movie, fname):
         plt.clim(lims)
         if i == 0:
             adjust_spines(ax, ['left', 'bottom'])
-            plt.title('Spatial Fourier')            
-            plt.xticks(np.linspace(0, four[0, i].shape[1], 4).astype(np.int))            
+            plt.title('Spatial Fourier')
+            plt.xticks(np.linspace(0, four[0, i].shape[1], 4).astype(np.int))
             plt.yticks(np.linspace(0, four[0, i].shape[0], 4).astype(np.int))
             plt.colorbar()
         else:

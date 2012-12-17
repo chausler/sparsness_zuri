@@ -280,7 +280,7 @@ def plot_clf_compare(clf_vals, fname):
                           [rows, cols, (i * cols) + jj + offset], title, ax_off)
     plt.subplots_adjust(left=0.05, bottom=0.05, right=0.98,
             top=0.98, wspace=0.1, hspace=0.05)
-    fname = '%s%s_pred' % (fig_path, 'compare_four')
+    fname = '%s%s_pred' % (fname, 'compare_four')
     fig.savefig(fname + '.eps')
     fig.savefig(fname + '.png')
     #plt.show()
@@ -596,7 +596,8 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
                             std, pred, crr_y, p_y, crr_pred, p_pred,
                             plot_params, fname)
                 if len(comb) == 1 and comb[0] == 'Fourier':
-                    plot_clf_compare(clf_vals)
+                    cmp_fname = '%s%s_' % (fig_path, expdate)
+                    plot_clf_compare(clf_vals, cmp_fname)
 
             comb_vals = []
             comb_vals.append(['mask', np.array(mask_corrs).mean(),

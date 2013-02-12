@@ -1,6 +1,6 @@
 import matplotlib
 # force plots to file. no display. comment out to use plt.show()
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import numpy as np
 import sys
 import pylab as plt

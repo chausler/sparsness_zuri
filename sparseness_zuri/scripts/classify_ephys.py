@@ -85,7 +85,9 @@ def CV(clf, X, y, folds=20, clf_args={}, clf_fit_args={},
     for (p, c) in pred:
         preds += p.tolist()
         coefs += [c]
-
+    dview.results.clear()
+    rc.purge_results('all')
+    rc.results.clear()
     return np.array(preds), np.array(coefs)
 
 
@@ -804,7 +806,6 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
 
 if __name__ == "__main__":
     corrs = []
-    
     exp_type = 'FS'
     # now its mask movie values for all predictions
     # try also whole

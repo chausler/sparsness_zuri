@@ -25,7 +25,8 @@ from data_utils.utils import do_thresh_corr, corr_trial_to_mean
 #from sklearn.linear_model import SGDRegressor as clf
 import itertools
 import os
-
+import sklearn
+print sklearn.__version__
 try:
     from IPython.parallel import Client
     from IPython.parallel.error import RemoteError
@@ -803,25 +804,28 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
 
 if __name__ == "__main__":
     corrs = []
+    
     exp_type = 'FS'
     # now its mask movie values for all predictions
     # try also whole
     # and make box plots!
     downsample = 11
-    for filt in np.arange(0.1, 1.1, 0.1):
-        print 'DOWNSAMPLE %s' % (str(downsample))
-        corrs.append(do_classification(exp_type=exp_type, min_comb=None,
-                                    max_comb=None,
-                                    targets=[['Center', 'Center'], ['Center', 'Whole'],
-                                             ['Whole', 'Center'], ['Whole', 'Whole'],
-                                             #['Surround', 'Whole']
-                                             ],
-                                       folds=20,
-                                    #combs=['Fourier'],
-                                    #combs=['Luminance', 'Flow'],
-                                    max_exp=None,
-                                   #targets=['Center', 'CenterWhole', 'Whole', 'WholeWhole'],
-                                   four_downsample=downsample, randomise=None,
-                                   filt=filt))
+    exp_types = ['FS', 'PYR', 'SOM']
+    for exp_type in exp_types:
+        for filt in np.arange(0.1, 1.1, 0.1):
+            print 'DOWNSAMPLE %s' % (str(downsample))
+            corrs.append(do_classification(exp_type=exp_type, min_comb=None,
+                                        max_comb=None,
+                                        targets=[['Center', 'Center'],
+                                                 ['Whole', 'Center'], ['Whole', 'Whole'],
+                                                 #['Surround', 'Whole']
+                                                 ],
+                                           folds=20,
+                                        #combs=['Fourier'],
+                                        #combs=['Luminance', 'Flow'],
+                                        max_exp=None,
+                                       #targets=['Center', 'CenterWhole', 'Whole', 'WholeWhole'],
+                                       four_downsample=downsample, randomise=None,
+                                       filt=filt))
     for c in corrs:
         print c[0]

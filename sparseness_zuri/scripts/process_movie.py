@@ -12,7 +12,7 @@ sys.path.append('..')
 import startup
 import os
 from plotting.utils import adjust_spines
-from data_utils.load_ephys import load_EphysData_SOM
+from data_utils.load_ephys import load_EphysData
 
 
 def ellipse(width, height):
@@ -118,11 +118,9 @@ def get_fourier2D(movie, dim_lim=7):
         diff_x = 1
     if diff_y < 1:
         diff_y = 1
-    if (fouriers.shape[1] < (diff_x * 2 + 1) or
-            fouriers.shape[2] < (diff_x * 2 + 1)):
-        _ = 1 / 0
-    fouriers = fouriers[:, midx - diff_x:midx + diff_x + 1, :]
-    fouriers = fouriers[:, :,  midy - diff_y:midy + diff_y + 1]
+    fouriers = fouriers[:, np.maximum(midx - diff_x, 0):midx + diff_x + 1, :]
+    fouriers = fouriers[:, :,  np.maximum(midy - diff_y, 0):midy + diff_y + 1]
+    # correct for really big values
     thresh = fouriers.mean() + 4 * np.std(fouriers)
     fouriers[fouriers > thresh] = thresh
     return fouriers
@@ -266,14 +264,17 @@ def get_masked_data(data, maskSizePixel, maskLocationPixel, parts=[3, 3]):
     mask_inds += (maskLocationPixel - maskSizePixel / 2).astype(np.int)
     masked = np.copy(data)
     surround = np.copy(data)
-    masked = masked[:, box_edges[0, 0]:box_edges[1, 0] + 1, :]
-    masked = masked[:, :, box_edges[0, 1]:box_edges[1, 1] + 1]
-
+    masked = masked[:, np.maximum(box_edges[0, 0], 0):box_edges[1, 0] + 1, :]
+    masked = masked[:, :, np.maximum(box_edges[0, 1], 0):box_edges[1, 1] + 1]
     for ind in inv_mask_inds:
-        masked[:, ind[0], ind[1]] = np.nan
+        if (ind[0] > 0 and ind[0] < masked.shape[1]
+            and ind[1] > 0 and ind[1] < masked.shape[2]):
+            masked[:, ind[0], ind[1]] = np.nan
 
     for ind in mask_inds:
-        surround[:, ind[0], ind[1]] = np.nan
+        if (ind[0] > 0 and ind[0] < surround.shape[1]
+            and ind[1] > 0 and ind[1] < surround.shape[2]):
+            surround[:, ind[0], ind[1]] = np.nan
 
     # split surround
     xs = surround.shape[1] / parts[0]
@@ -299,20 +300,23 @@ def get_masked_data(data, maskSizePixel, maskLocationPixel, parts=[3, 3]):
 
 
 if __name__ == "__main__":
-    #ellipse(20, 20)
-    ephys = load_EphysData_SOM()
-    dat_path = startup.data_path + 'ephys/som/'
-    fig_path = startup.fig_path + 'ephys/som/movies'
+    exp_type = 'PYR'
+    failed_count = 0
+    success_count = 0
+    ephys = load_EphysData(exp_type)
+    dat_path = startup.data_path + 'ephys/%s/' % exp_type
+    fig_path = startup.fig_path + 'ephys/%s/movies/' % exp_type
+
     if not os.path.exists(fig_path):
         os.makedirs(fig_path)
     for e in ephys.values():
-        print 'recording ', e['expdate']
-#        if e['expdate'] != '120601':
-#            continue
-        target_fname = e['expdate'] + '_processed.npz'
+        print 'recording ', e['cellid']
+        target_fname = e['cellid'] + '_processed.npz'
         flow_fname = e['expdate'] + '_flow.mat'
         if os.path.exists(dat_path + target_fname):
             print 'already exists, skipping ', target_fname
+            success_count += 1
+            continue
 
         if not os.path.exists(dat_path + flow_fname):
             print 'flow data missing, skipping ', flow_fname
@@ -333,8 +337,15 @@ if __name__ == "__main__":
                       :e['adjustedMovResolution'][1]]
             flow = flow[:, :e['adjustedMovResolution'][0],
                       :e['adjustedMovResolution'][1]]
+        #try:
         masked, surround = get_masked_data(movie,
                                     e['maskSizePixel'], e['maskLocationPixel'])
+#        except:
+#            print 'FAILED: ', e['cellid']
+#            failed_count += 1
+#            continue
+        success_count += 1
+
         lum_mask = get_luminance(masked)[np.newaxis, :]
         con_mask = get_contrast(masked)[np.newaxis, :]
         four_mask = get_fourier2D(masked)[np.newaxis, :, :, :]
@@ -357,7 +368,7 @@ if __name__ == "__main__":
                                     e['maskSizePixel'], e['maskLocationPixel'])
         movie = movie[np.newaxis, :, :, :]
         masked = masked[np.newaxis, :, :, :]
-        np.savez(dat_path + e['expdate'] + '_processed.npz',
+        np.savez(dat_path + target_fname,
                    lum_mask=lum_mask, con_mask=con_mask, flow_mask=flow_mask,
                    four_mask=four_mask, masked=masked,
                    lum_whole=lum_whole, con_whole=con_whole,
@@ -365,10 +376,21 @@ if __name__ == "__main__":
                    four_whole=four_whole, movie=movie,
                    lum_surr=lum_surr, con_surr=con_surr, flow_surr=flow_surr,
                    four_surr=four_surr, surround=surround)
+
+        scipy.io.savemat(dat_path + target_fname[:-3] + '.mat',
+            {'lum_mask': lum_mask, 'con_mask': con_mask,
+            'flow_mask': flow_mask, 'four_mask': four_mask, 'masked': masked,
+            'lum_whole': lum_whole, 'con_whole': con_whole,
+            'flow_whole': flow_whole, 'four_whole': four_whole, 'movie': movie,
+            'lum_surr': lum_surr, 'con_surr': con_surr, 'flow_surr': flow_surr,
+            'four_surr': four_surr, 'surround': surround})
+
         plot_movie(lum_mask, con_mask, flow_mask, four_mask, masked,
-                   fig_path + e['expdate'] + '_masked')
+                   fig_path + e['cellid'] + '_masked')
         plot_movie(lum_whole, con_whole, flow_whole, four_whole, movie,
-                   fig_path + e['expdate'] + '_whole')
+                   fig_path + e['cellid'] + '_whole')
         plot_surround(lum_surr, con_surr, flow_surr, four_surr, surround,
-                   fig_path + e['expdate'] + '_surround')
+                   fig_path + e['cellid'] + '_surround')
+    print 'Failed: ', failed_count
+    print 'Successful: ', success_count
 #        animate_matrix_multi([masked, four_mask])

@@ -1,3 +1,12 @@
+import pylab as plt
+
+
+def do_box_plot(data, xval, c):
+    box = plt.boxplot(data, positions=xval)
+    plt.setp(box['boxes'], color=c, lw=1.5)
+    plt.setp(box['medians'], color=c, lw=3)
+    plt.setp(box['whiskers'], color='0.6')
+    plt.setp(box['caps'], color=c)
 
 
 def adjust_spines(ax, spines, outward=None):

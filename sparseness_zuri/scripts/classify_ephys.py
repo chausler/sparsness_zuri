@@ -737,7 +737,7 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
                     X_dims = X.shape[2]
 
                     pred, coefs = CV(Lasso,
-                            X, y, len(y), {'alpha': 0.01})
+                            X, y, folds=folds, {'alpha': 0.01})
 #                    coefs = []
 ##                    lassoCV(X.reshape(-1, X_dims),
 ##                                 y.ravel())

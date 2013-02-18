@@ -826,7 +826,7 @@ if __name__ == "__main__":
                                         #combs=['Luminance', 'Flow'],
                                         max_exp=None,
                                        #targets=['Center', 'CenterWhole', 'Whole', 'WholeWhole'],
-                                       four_downsample=downsample, randomise='random',
+                                       four_downsample=downsample, randomise='shift',
                                        filt=filt))
     for c in corrs:
         print c[0]

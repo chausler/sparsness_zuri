@@ -656,7 +656,7 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
     fig_path = startup.fig_path + 'ephys/%s/pred/' % (exp_type)
     mov_path = startup.data_path + 'ephys/%s/' % (exp_type)
     if randomise is not None:
-        pth = fig_path + str(filt) + '_' + randomise
+        pth = fig_path + randomise + '_' + str(filt)
     else:
         pth = fig_path + str(filt)
 

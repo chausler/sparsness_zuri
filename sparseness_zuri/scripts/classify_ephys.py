@@ -714,7 +714,7 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
 
                     if randomise is not None:
                         fname = '%s%s_%s/%s/' % (fig_path,
-                                                  str(filt), randomise,
+                                                  randomise, str(filt),
                                                   cellid)
                         if randomise == 'shift':
                             idx = deque(np.arange(y.shape[1]))

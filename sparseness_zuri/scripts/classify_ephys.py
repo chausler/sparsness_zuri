@@ -656,7 +656,7 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
     fig_path = startup.fig_path + 'ephys/%s/pred/' % (exp_type)
     mov_path = startup.data_path + 'ephys/%s/' % (exp_type)
     if randomise is not None:
-        pth = fig_path + str(filt) + '_Rand'
+        pth = fig_path + str(filt) + '_' + randomise
     else:
         pth = fig_path + str(filt)
 
@@ -813,7 +813,7 @@ if __name__ == "__main__":
     downsample = 11
     exp_types = ['FS', 'PYR', 'SOM']
     for exp_type in exp_types:
-        for filt in np.arange(0.1, 1.1, 0.1):
+        for filt in [0.1]:#np.arange(0.1, 1.1, 0.1):
             print 'DOWNSAMPLE %s' % (str(downsample))
             corrs.append(do_classification(exp_type=exp_type, min_comb=None,
                                         max_comb=None,
@@ -826,7 +826,7 @@ if __name__ == "__main__":
                                         #combs=['Luminance', 'Flow'],
                                         max_exp=None,
                                        #targets=['Center', 'CenterWhole', 'Whole', 'WholeWhole'],
-                                       four_downsample=downsample, randomise=None,
+                                       four_downsample=downsample, randomise='shift',
                                        filt=filt))
     for c in corrs:
         print c[0]

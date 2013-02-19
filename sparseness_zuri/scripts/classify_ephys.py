@@ -313,6 +313,7 @@ def plot_summary(comb_corrs, targets, fig_path, extras=''):
         offset = 0
         for j, targ in enumerate(targets):
             dat = vals[targ]
+            dat = dat[dat != 0]
             if len(dat) == 0:
                 continue
             if targ == 'Overall':

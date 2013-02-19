@@ -245,6 +245,8 @@ def load_EphysData(exp_type='SOM', filt=0.2):
             psth_w = np.array(dt[8], dtype=np.int)
             psth_s = np.array(dt[9], dtype=np.int)
 
+        # do shift
+        # do generate
         psth_c, edge = filter(psth_c, bin_freq, prm=filt)
         psth_w, _ = filter(psth_w, bin_freq, prm=filt)
         psth_s, _ = filter(psth_s, bin_freq, prm=filt)

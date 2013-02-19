@@ -179,6 +179,8 @@ def plot_prediction(pred, actual, title, plt_num=[1, 1, 1], legend=True):
     ax = plt.subplot(plt_num[0], plt_num[1], plt_num[2])
     plt.hold(True)
     #plt.fill_between(range(len(pred)), actual, pred, facecolor=clr3)
+    pred = (pred - pred.mean()) / np.std(pred)
+    actual = (actual - actual.mean()) / np.std(actual)
     plt.plot(range(len(pred)), pred, color=clr4, linewidth=2,
              label='Predicted')
     plt.plot(range(len(pred)), actual, color=clr1,

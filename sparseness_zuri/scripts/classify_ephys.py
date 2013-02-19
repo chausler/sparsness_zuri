@@ -691,7 +691,7 @@ def append_Nones(target, addition, axis=1):
 
 
 def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
-                        'Flow', 'Fourier'],
+                        'Fourier'],
                       targets=[['Center', 'Center'], ['Center', 'Whole'],
                                ['Whole', 'Center'], ['Whole', 'Whole'],
                                ['Surround', 'Whole']],
@@ -726,8 +726,8 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
         min_comb = 0
 
     cell_results = {}
-    for num_combs in range(min_comb, max_comb):
-        for comb in itertools.combinations(combs, num_combs + 1):
+    for num_combs in [1, len(combs)]:
+        for comb in itertools.combinations(combs, num_combs):
             print comb
             full_comb = str(num_combs + 1) + '_' + "_".join(comb)
             comb_vals = {'Overall': []}
@@ -874,7 +874,7 @@ if __name__ == "__main__":
                                         #combs=['Luminance', 'Flow'],
                                         max_exp=None,
                                        #targets=['Center', 'CenterWhole', 'Whole', 'WholeWhole'],
-                                       four_downsample=downsample, randomise='generated',
+                                       four_downsample=downsample, randomise=None,
                                        filt=filt))
     for c in corrs:
         print c[0]

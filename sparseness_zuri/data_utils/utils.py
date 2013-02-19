@@ -73,7 +73,6 @@ def filter(dat, bin_freq, type='exp', window=300, prm=0.2):
     return fr, len(kern) / 2
 
 
-
 def corr_trial_to_mean(trials, mn, edge=None):
     xcorr = []
     for t in trials:

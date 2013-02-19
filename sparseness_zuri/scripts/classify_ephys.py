@@ -819,9 +819,11 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
                     pred, _ = filter(pred, e['bin_freq'])
                     coefs = np.array(coefs).mean(0)
                     clf_vals.append([targ_type, ])
+                    edge = e['edge']
                     mn = y.mean(0)
                     std = np.std(y, 0)
-                    crr_pred = do_thresh_corr(mn, pred)
+                    crr_pred = do_thresh_corr(mn[edge: -edge],
+                                              pred[edge: -edge])
                     if crr_pred > sig_thresh:
                         sig_found = True
 
@@ -884,7 +886,7 @@ if __name__ == "__main__":
                                         #combs=['Luminance', 'Flow'],
                                         max_exp=None,
                                        #targets=['Center', 'CenterWhole', 'Whole', 'WholeWhole'],
-                                       four_downsample=downsample, randomise='random',
+                                       four_downsample=downsample, randomise=None,
                                        filt=filt))
     for c in corrs:
         print c[0]

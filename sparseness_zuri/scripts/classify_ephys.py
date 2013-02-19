@@ -307,7 +307,7 @@ def plot_summary(comb_corrs, targets, fig_path, extras=''):
     boxes = []
     lbls = []
 
-    targets.append('Overall')
+    #targets.append('Overall')
     for i, [comb, vals] in enumerate(comb_corrs):
         xaxis.append(comb)
         offset = 0

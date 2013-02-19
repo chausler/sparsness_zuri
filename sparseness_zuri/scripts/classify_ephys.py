@@ -857,7 +857,7 @@ if __name__ == "__main__":
     exp_type = 'FS'
     # now its mask movie values for all predictions
     # try also whole
-    # and make box plots!
+    # and make box plots! 
     downsample = 11
     exp_types = ['FS', 'PYR', 'SOM']
     for exp_type in exp_types:

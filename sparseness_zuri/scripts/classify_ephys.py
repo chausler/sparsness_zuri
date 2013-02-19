@@ -746,7 +746,7 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
     for num_combs in [1, len(combs)]:
         for comb in itertools.combinations(combs, num_combs):
             print comb
-            full_comb = str(num_combs + 1) + '_' + "_".join(comb)
+            full_comb = str(num_combs) + '_' + "_".join(comb)
             comb_vals = {'Overall': []}
             for i, e in enumerate(dat.values()):
                 if max_exp is not None and i >= max_exp:

@@ -11,7 +11,7 @@ import numpy.fft as fft
 import startup
 from collections import deque
 from scipy.stats import pearsonr, spearmanr, kendalltau
-from plotting.utils import adjust_spines, do_box_plot
+from plotting.utils import adjust_spines, do_box_plot, do_spot_scatter_plot
 from data_utils.utils import filter
 from data_utils.load_ephys import load_EphysData, load_parsed_movie_dat
 #from sklearn.linear_model import LinearRegression as clf
@@ -313,15 +313,15 @@ def plot_summary(comb_corrs, targets, fig_path, extras=''):
         offset = 0
         for j, targ in enumerate(targets):
             dat = vals[targ]
-            dat = dat[dat != 0]
             if len(dat) == 0:
                 continue
             if targ == 'Overall':
                 col = '0.3'
             else:
                 col = colors[j]
-            do_box_plot(np.array(dat), np.array([i + offset]), col)
-            offset += 0.15
+            #do_box_plot(np.array(dat), np.array([i + offset]), col)
+            do_spot_scatter_plot(np.array(dat), np.array([i + offset]), col)
+            offset += 0.3
             if i == 0:
                 boxes.append(plt.Rectangle((0, 0), 1, 1, fc=col))
                 lbls.append(targ)
@@ -742,7 +742,7 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
         min_comb = 0
 
     cell_results = {}
-    for num_combs in [1, len(combs)]:
+    for num_combs in [1]:#, len(combs)]:
         for comb in itertools.combinations(combs, num_combs):
             print comb
             full_comb = str(num_combs) + '_' + "_".join(comb)

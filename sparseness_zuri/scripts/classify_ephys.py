@@ -461,6 +461,14 @@ def plot_clf_compare(clf_vals, fname):
     plt.close(fig)
 
 
+def gen_data(dat, freq):
+    idx = np.arange(dat.shape[0])
+    np.random.shuffle(idx)
+    for d in range(dat.shape[1]):
+        dat[:, d], _ = filter(dat[idx, d], freq)
+    return dat
+
+
 def lassoCV(X, y):
     import time
     t1 = time.time()
@@ -485,7 +493,8 @@ def lassoCV(X, y):
     plt.show()
 
 
-def get_mov_data(comb, targ_type, src_type, e, expdate, exp_type, four_downsample=None):
+def get_mov_data(comb, targ_type, src_type, e, expdate, exp_type,
+                 four_downsample=None):
 
     lum_mask, con_mask, flow_mask,\
                     four_mask, four_mask_shape,\
@@ -621,6 +630,43 @@ def get_mov_data(comb, targ_type, src_type, e, expdate, exp_type, four_downsampl
                 all_dat = append_Nones(all_dat, f, 1)
                 idx_four += [range(pre_len, all_dat.shape[1])]
                 four_shape.append(four_whole_shape)
+    elif src_type == 'Generated':
+        if 'Luminance' in comb:
+            for l in lum_whole:
+                r = gen_data(l[:, np.newaxis], e['bin_freq'])
+                all_dat = append_Nones(all_dat, r, 1)
+                idx_bar += [all_dat.shape[1] - 1]
+                lbl_bar += ['Luminance']
+        if 'Contrast' in comb:
+            for c in con_whole:
+                r = gen_data(c[:, np.newaxis], e['bin_freq'])
+                all_dat = append_Nones(all_dat, r, 1)
+                idx_bar += [all_dat.shape[1] - 1]
+                lbl_bar += ['Contrast']
+        if 'Flow' in comb:
+            for f in flow_whole:
+                if all_dat != None:
+                    pre_len = all_dat.shape[1]
+                else:
+                    pre_len = 0
+                r = gen_data(f[:, :-1], e['bin_freq'])
+                all_dat = append_Nones(all_dat, r, 1)
+                idx_flow += [range(pre_len, all_dat.shape[1])]
+            for f in flow_whole:
+                r = gen_data(f[:, -1:], e['bin_freq'])
+                all_dat = append_Nones(all_dat, r, 1)
+                idx_bar += [all_dat.shape[1] - 1]
+                lbl_bar += ['Flow Vel']
+        if 'Fourier' in comb:
+            for f in four_whole:
+                if all_dat != None:
+                    pre_len = all_dat.shape[1]
+                else:
+                    pre_len = 0
+                r = gen_data(f, e['bin_freq'])
+                all_dat = append_Nones(all_dat, r, 1)
+                idx_four += [range(pre_len, all_dat.shape[1])]
+                four_shape.append(four_mask_shape)
 
     all_dat = np.tile(all_dat, [source.shape[0], 1, 1])
     plot_params = {}
@@ -709,6 +755,8 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
                         cell_results[cellid][full_comb][targ_type] = {}
                     if src_type not in cell_results[cellid][full_comb][targ_type]:
                         cell_results[cellid][full_comb][targ_type][src_type] = {}
+                    if randomise == 'generated':
+                        src_type = 'Generated'
                     X, y, plot_params = get_mov_data(comb, targ_type, src_type,
                                         e, cellid, exp_type, four_downsample)
 
@@ -716,11 +764,11 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
                         fname = '%s%s_%s/%s/' % (fig_path,
                                                   randomise, str(filt),
                                                   cellid)
+                        idx = np.arange(y.shape[1])
                         if randomise == 'shift':
-                            idx = deque(np.arange(y.shape[1]))
+                            idx = deque(idx)
                             idx.rotate(-23)
-                        elif randomise == 'random':
-                            idx = np.arange(y.shape[1])
+                        elif randomise == 'random':                            
                             np.random.shuffle(idx)
                         y = y[:, idx]
                     else:
@@ -818,7 +866,7 @@ if __name__ == "__main__":
             corrs.append(do_classification(exp_type=exp_type, min_comb=None,
                                         max_comb=None,
                                         targets=[['Center', 'Center'],
-                                                 ['Whole', 'Center'], ['Whole', 'Whole'],
+                                                 ['Whole', 'Whole']
                                                  #['Surround', 'Whole']
                                                  ],
                                            folds=20,
@@ -826,7 +874,7 @@ if __name__ == "__main__":
                                         #combs=['Luminance', 'Flow'],
                                         max_exp=None,
                                        #targets=['Center', 'CenterWhole', 'Whole', 'WholeWhole'],
-                                       four_downsample=downsample, randomise='shift',
+                                       four_downsample=downsample, randomise='generated',
                                        filt=filt))
     for c in corrs:
         print c[0]

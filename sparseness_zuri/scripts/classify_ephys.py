@@ -213,18 +213,16 @@ def plot_four(four_weights, ylims, plt_num=[1, 1, 1], title=None,
     """plot the weights of the spatial fourier """
     ax = plt.subplot(plt_num[0], plt_num[1], plt_num[2])
     ext = four_weights.shape[0] / 2.
-    im = plt.imshow(four_weights.T, cmap=plt.cm.gray,
+    _ = plt.imshow(four_weights.T, cmap=plt.cm.gray,
                     interpolation=interpolation,
                extent=(-ext, ext, -ext, ext))
     plt.clim(ylims)
     if ax_off:
         adjust_spines(ax, [])
     else:
-        adjust_spines(ax, ['bottom', 'left'])
-        plt.xlabel('Cycles/Patch', fontsize='large')
-        plt.ylabel('Cycles/Patch', fontsize='large')
+        adjust_spines(ax, ['bottom', 'left'])        
     if title is None:
-        title = 'Spatial Fourier Weights'
+        title = 'Filter'
     plt.title(title)
 #    cax = plt.subplot(244)
 #    plt.colorbar(im, cax=cax, cmap=plt.cm.gray)

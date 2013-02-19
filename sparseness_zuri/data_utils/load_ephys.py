@@ -254,8 +254,15 @@ def load_EphysData(exp_type='SOM', filt=0.2):
         psth_w_rand = psth_w[:, idx]
         if psth_s is not None:
             psth_s_rand = psth_s[:, idx]
-
-
+        else:
+            psth_s_rand = None
+#           idx = np.arange(y.shape[1])
+#                        if randomise == 'shift':
+#                            idx = deque(idx)
+#                            idx.rotate(-23)
+#                        elif randomise == 'random':                            
+#                            np.random.shuffle(idx)
+#                        y = y[:, idx]
         all_dat[cellid] = {'expdate': expdate, 'cellid': cellid,
                             #'matfile': matfile,
                             #'conditions': conditions,

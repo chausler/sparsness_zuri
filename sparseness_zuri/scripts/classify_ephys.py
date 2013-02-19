@@ -778,7 +778,7 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
                     if randomise is not None:
                         fname = '%s%s_%s/%s/' % (fig_path,
                                                   randomise, str(filt),
-                                                  cellid)                     
+                                                  cellid)
                     else:
                         fname = '%s%s/%s/' % (fig_path,
                                                   str(filt),

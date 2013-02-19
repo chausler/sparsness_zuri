@@ -494,7 +494,7 @@ def lassoCV(X, y):
 
 
 def get_mov_data(comb, targ_type, src_type, e, expdate, exp_type,
-                 four_downsample=None):
+                 four_downsample=None, randomise=None, shift=0):
 
     lum_mask, con_mask, flow_mask,\
                     four_mask, four_mask_shape,\
@@ -514,12 +514,27 @@ def get_mov_data(comb, targ_type, src_type, e, expdate, exp_type,
     lbl_bar = []
     four_shape = []
     all_dat = None
-    if targ_type == 'Center':
-        source = e['psth_c']
-    elif targ_type == 'Surround':
-        source = e['psth_s']
-    elif targ_type == 'Whole':
-        source = e['psth_w']
+    if randomise is None:
+        if targ_type == 'Center':
+            source = e['psth_c']
+        elif targ_type == 'Surround':
+            source = e['psth_s']
+        elif targ_type == 'Whole':
+            source = e['psth_w']
+    elif randomise == 'random':
+        if targ_type == 'Center':
+            source = e['psth_c_rand']
+        elif targ_type == 'Surround':
+            source = e['psth_s_rand']
+        elif targ_type == 'Whole':
+            source = e['psth_w_rand']
+    elif randomise == 'generate':
+        if targ_type == 'Center':
+            source = e['psth_c_gen']
+        elif targ_type == 'Surround':
+            source = e['psth_s_gen']
+        elif targ_type == 'Whole':
+            source = e['psth_w_gen']
     edge = e['edge']
     if src_type == 'Center':
         if 'Luminance' in comb:
@@ -755,10 +770,10 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
                         cell_results[cellid][full_comb][targ_type] = {}
                     if src_type not in cell_results[cellid][full_comb][targ_type]:
                         cell_results[cellid][full_comb][targ_type][src_type] = {}
-                    if randomise == 'generated':
-                        src_type = 'Generated'
+
                     X, y, plot_params = get_mov_data(comb, targ_type, src_type,
-                                        e, cellid, exp_type, four_downsample)
+                                        e, cellid, exp_type, four_downsample,
+                                        randomise)
 
                     if randomise is not None:
                         fname = '%s%s_%s/%s/' % (fig_path,
@@ -874,7 +889,7 @@ if __name__ == "__main__":
                                         #combs=['Luminance', 'Flow'],
                                         max_exp=None,
                                        #targets=['Center', 'CenterWhole', 'Whole', 'WholeWhole'],
-                                       four_downsample=downsample, randomise=None,
+                                       four_downsample=downsample, randomise='random',
                                        filt=filt))
     for c in corrs:
         print c[0]

@@ -248,6 +248,14 @@ def load_EphysData(exp_type='SOM', filt=0.2):
         psth_c, edge = filter(psth_c, bin_freq, prm=filt)
         psth_w, _ = filter(psth_w, bin_freq, prm=filt)
         psth_s, _ = filter(psth_s, bin_freq, prm=filt)
+        idx = np.arange(psth_c.shape[1])
+        np.random.shuffle(idx)
+        psth_c_rand = psth_c[:, idx]
+        psth_w_rand = psth_w[:, idx]
+        if psth_s is not None:
+            psth_s_rand = psth_s[:, idx]
+
+
         all_dat[cellid] = {'expdate': expdate, 'cellid': cellid,
                             #'matfile': matfile,
                             #'conditions': conditions,
@@ -256,6 +264,9 @@ def load_EphysData(exp_type='SOM', filt=0.2):
                             'movie_duration': movie_duration,
                             'psth_c': psth_c, 'psth_w': psth_w,
                             'psth_s': psth_s,
+                            'psth_c_rand': psth_c_rand,
+                            'psth_w_rand': psth_w_rand,
+                            'psth_s_rand': psth_s_rand,
                             #'fr_c':fr_c, 'fr_w':fr_w,  'fr_s':fr_s,  
                             'maskLocationDeg': maskLocationDeg,
                             'maskSizeDeg': maskSizeDeg,

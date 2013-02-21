@@ -2,6 +2,7 @@ import sys
 sys.path.append('..')
 from startup import *
 import scipy.io
+from collections import deque
 import numpy as np
 import os
 import Image
@@ -130,6 +131,29 @@ def load_parsed_movie_dat(expdate, exp_type='SOM', four_downsample=None):
             lum_whole, con_whole, flow_whole, four_whole, four_whole_shape
 
 
+def generate_psth(src):
+    if src is None:
+        return None
+    targ = []
+    for t in src:
+            psth = np.zeros_like(t)
+            spk_times = np.where(t)[0]
+            spikes = t[t != 0]
+            if len(spikes) > 0:
+                isi = np.array([spk_times[0] + 1] +
+                               np.diff(spk_times).tolist())
+                np.random.shuffle(spikes)
+                np.random.shuffle(isi)
+                cnt = 0
+                for i, j in zip(isi, spikes):
+                    cnt += i
+                    if cnt >= (len(psth) - 1):
+                        cnt -= 1
+                    psth[cnt] += j
+            targ.append(psth)
+    return np.array(targ)
+
+
 def load_EphysData(exp_type='SOM', filt=0.2):
 
     #ignore 120201
@@ -219,22 +243,7 @@ def load_EphysData(exp_type='SOM', filt=0.2):
             maskLocationPixel += (adjustedMovResolution / 2.)
             maskLocationPixel = maskLocationPixel.astype(np.int)
 
-        #matfile = dt[2][0]
-#        conditions = []
-#        for c in dt[3][0]:
-#            conditions.append(str(c[0]))
-#        conditions_used = []
-#        for c in dt[4][0]:            
-#            val = str(c[0])
-#            if 'Inverse' in val:
-#                val = 'Surround'
-#            elif 'Deg Mask' in val:
-#                val = 'RF'
-#            elif 'Whole' in val:
-#                val = 'WF'
-#            conditions_used.append(val)
-
-        bin_freq = dt[5][0][0]        
+        bin_freq = dt[5][0][0]
         movie_duration = dt[6][0][0]
         if exp_type == 'PYR':
             psth_c = np.array(dt[6], dtype=np.int)
@@ -246,10 +255,41 @@ def load_EphysData(exp_type='SOM', filt=0.2):
             psth_s = np.array(dt[9], dtype=np.int)
 
         # do shift
+        psth_c_shift = []
+        psth_w_shift = []
+        psth_s_shift = []
+        shifts = np.arange(-35, 36, 5).tolist()
+        shifts += range(-5,5)
+        shifts = np.array(list(set(shifts)))
+        shifts.sort()
+
+        for shift in shifts:
+            idx = deque(np.arange(psth_c.shape[1]))
+            idx.rotate(shift)
+            c, _ = filter(psth_c[:, idx], bin_freq, prm=filt)
+            psth_c_shift.append(c)
+            w, _ = filter(psth_w[:, idx], bin_freq, prm=filt)
+            psth_w_shift.append(w)
+            if psth_s is not None:
+                s, _ = filter(psth_s[:, idx], bin_freq, prm=filt)
+                psth_s_shift.append(s)
+        psth_c_shift = np.array(psth_c_shift)
+        psth_w_shift = np.array(psth_w_shift)
+        psth_s_shift = np.array(psth_s_shift)
+
         # do generate
+        psth_c_gen = generate_psth(psth_c)
+        psth_w_gen = generate_psth(psth_w)
+        psth_s_gen = generate_psth(psth_s)
+        psth_c_gen, _ = filter(psth_c_gen, bin_freq, prm=filt)
+        psth_w_gen, _ = filter(psth_w_gen, bin_freq, prm=filt)
+        psth_s_gen, _ = filter(psth_s_gen, bin_freq, prm=filt)
+
         psth_c, edge = filter(psth_c, bin_freq, prm=filt)
         psth_w, _ = filter(psth_w, bin_freq, prm=filt)
         psth_s, _ = filter(psth_s, bin_freq, prm=filt)
+
+        # random version
         idx = np.arange(psth_c.shape[1])
         np.random.shuffle(idx)
         psth_c_rand = psth_c[:, idx]
@@ -262,7 +302,7 @@ def load_EphysData(exp_type='SOM', filt=0.2):
 #                        if randomise == 'shift':
 #                            idx = deque(idx)
 #                            idx.rotate(-23)
-#                        elif randomise == 'random':                            
+#                        elif randomise == 'random':
 #                            np.random.shuffle(idx)
 #                        y = y[:, idx]
         all_dat[cellid] = {'expdate': expdate, 'cellid': cellid,
@@ -276,7 +316,13 @@ def load_EphysData(exp_type='SOM', filt=0.2):
                             'psth_c_rand': psth_c_rand,
                             'psth_w_rand': psth_w_rand,
                             'psth_s_rand': psth_s_rand,
-                            #'fr_c':fr_c, 'fr_w':fr_w,  'fr_s':fr_s,  
+                            'psth_c_gen': psth_c_gen,
+                            'psth_w_gen': psth_w_gen,
+                            'psth_s_gen': psth_s_gen,
+                            'psth_c_shift': psth_c_shift,
+                            'psth_w_shift': psth_w_shift,
+                            'psth_s_shift': psth_s_shift,
+                            'shifts': shifts,
                             'maskLocationDeg': maskLocationDeg,
                             'maskSizeDeg': maskSizeDeg,
                             #'vfSizeDegrees': vfSizeDegrees,

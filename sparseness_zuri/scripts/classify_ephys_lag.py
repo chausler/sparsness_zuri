@@ -5,7 +5,7 @@ import numpy as np
 import sys
 import pylab as plt
 sys.path.append('..')
-
+import pickle
 sys.path = ['/home/chris/programs/scikit-learn'] + sys.path
 import numpy.fft as fft
 import startup
@@ -500,7 +500,7 @@ def lassoCV(X, y):
 
 
 def get_mov_data(comb, targ_type, src_type, e, expdate, exp_type,
-                 four_downsample=None, randomise=None, shift=0):
+                 four_downsample=None, shift=0):
 
     lum_mask, con_mask, flow_mask,\
                     four_mask, four_mask_shape,\
@@ -520,27 +520,12 @@ def get_mov_data(comb, targ_type, src_type, e, expdate, exp_type,
     lbl_bar = []
     four_shape = []
     all_dat = None
-    if randomise is None:
-        if targ_type == 'Center':
-            source = e['psth_c']
-        elif targ_type == 'Surround':
-            source = e['psth_s']
-        elif targ_type == 'Whole':
-            source = e['psth_w']
-    elif randomise == 'random':
-        if targ_type == 'Center':
-            source = e['psth_c_rand']
-        elif targ_type == 'Surround':
-            source = e['psth_s_rand']
-        elif targ_type == 'Whole':
-            source = e['psth_w_rand']
-    elif randomise == 'generated':
-        if targ_type == 'Center':
-            source = e['psth_c_gen']
-        elif targ_type == 'Surround':
-            source = e['psth_s_gen']
-        elif targ_type == 'Whole':
-            source = e['psth_w_gen']
+    if targ_type == 'Center':
+        source = e['psth_c_shift'][shift]
+    elif targ_type == 'Surround':
+        source = e['psth_s_shift'][shift]
+    elif targ_type == 'Whole':
+        source = e['psth_w_shift'][shift]
     edge = e['edge']
     print src_type, targ_type
     if src_type == 'Center':
@@ -652,44 +637,7 @@ def get_mov_data(comb, targ_type, src_type, e, expdate, exp_type,
                 all_dat = append_Nones(all_dat, f, 1)
                 idx_four += [range(pre_len, all_dat.shape[1])]
                 four_shape.append(four_whole_shape)
-    elif src_type == 'Generated':
-        if 'Luminance' in comb:
-            for l in lum_whole:
-                r = gen_data(l[:, np.newaxis], e['bin_freq'])
-                all_dat = append_Nones(all_dat, r, 1)
-                idx_bar += [all_dat.shape[1] - 1]
-                lbl_bar += ['Luminance']
-        if 'Contrast' in comb:
-            for c in con_whole:
-                r = gen_data(c[:, np.newaxis], e['bin_freq'])
-                all_dat = append_Nones(all_dat, r, 1)
-                idx_bar += [all_dat.shape[1] - 1]
-                lbl_bar += ['Contrast']
-        if 'Flow' in comb:
-            for f in flow_whole:
-                if all_dat != None:
-                    pre_len = all_dat.shape[1]
-                else:
-                    pre_len = 0
-                r = gen_data(f[:, :-1], e['bin_freq'])
-                all_dat = append_Nones(all_dat, r, 1)
-                idx_flow += [range(pre_len, all_dat.shape[1])]
-            for f in flow_whole:
-                r = gen_data(f[:, -1:], e['bin_freq'])
-                all_dat = append_Nones(all_dat, r, 1)
-                idx_bar += [all_dat.shape[1] - 1]
-                lbl_bar += ['Flow Vel']
-        if 'Fourier' in comb:
-            for f in four_whole:
-                if all_dat != None:
-                    pre_len = all_dat.shape[1]
-                else:
-                    pre_len = 0
-                r = gen_data(f, e['bin_freq'])
-                all_dat = append_Nones(all_dat, r, 1)
-                idx_four += [range(pre_len, all_dat.shape[1])]
-                four_shape.append(four_mask_shape)
-
+ 
     all_dat = np.tile(all_dat, [source.shape[0], 1, 1])
     plot_params = {}
     plot_params['idx_bar'] = idx_bar
@@ -712,29 +660,23 @@ def append_Nones(target, addition, axis=1):
     return target
 
 
-def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
+def do_lag_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
                         'Fourier'],
                       targets=[['Center', 'Center'], ['Center', 'Whole'],
                                ['Whole', 'Center'], ['Whole', 'Whole'],
                                ['Surround', 'Whole']],
                       max_comb=None, min_comb=None,
                        four_downsample=None, max_exp=None, sig_thresh=0.,
-                       randomise=None, folds=5, filt=0.2,
+                        folds=5, filt=0.2,
                        alpha=0.001):
     # Sub directory of the figure path to put the plots in
     fig_path = startup.fig_path + 'ephys/%s/pred/' % (exp_type)
     mov_path = startup.data_path + 'ephys/%s/' % (exp_type)
-    if randomise is not None:
-        pth = fig_path + randomise + '_' + str(filt)
-    else:
-        pth = fig_path + str(filt)
+    
 
-    if os.path.exists(pth):
-        if os.path.exists(pth + '/summary_all.csv'):
-            print pth, ' already exists. Skipping'
-            #return ['skipped']
-    else:
-        os.makedirs(pth)
+    if os.path.exists(fig_path + 'shift.pkl'):
+        print ' already exists. Skipping'
+        return
 
     full_targets = []
     for [targ_type, src_type] in targets:
@@ -755,99 +697,46 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
             full_comb = str(num_combs) + '_' + "_".join(comb)
             comb_vals = {'Overall': []}
             for i, e in enumerate(dat.values()):
-                if max_exp is not None and i >= max_exp:
-                    break
                 expdate = e['expdate']
                 cellid = str(e['cellid'])
+                shifts = e['shifts']
                 edge = e['edge']
-                if cellid not in cell_results:
-                    cell_results[cellid] = {}
-                if  full_comb not in cell_results[cellid]:
-                    cell_results[cellid][full_comb] = {}
                 if not os.path.exists(mov_path + cellid + '_processed.npz'):
                     print '\nNo movie found ', cellid
                     continue
                 else:
                     print '\ndoing ', e['cellid']
 
-                clf_vals = []
-                sig_found = False
-                results = {}
-                for [targ_type, src_type] in targets:
-                    k = '%s_%s' % (targ_type, src_type)
-                    if targ_type not in cell_results[cellid][full_comb]:
-                        cell_results[cellid][full_comb][targ_type] = {}
-                    if src_type not in cell_results[cellid][full_comb][targ_type]:
-                        cell_results[cellid][full_comb][targ_type][src_type] = {}
+                for s in range(len(shifts)):
+                    shift = str(shifts[s])
+                    clf_vals = []
+                    results = {}
+                    for [targ_type, src_type] in targets:
+                        k = '%s_%s' % (targ_type, src_type)
+                        print k, shift
+                        if k not in cell_results:
+                            cell_results[k] = {}
+                        if full_comb not in cell_results[k]:
+                            cell_results[k][full_comb] = {}
+                        if shift not in cell_results[k][full_comb]:
+                            cell_results[k][full_comb][shift] = []
 
-                    X, y, plot_params = get_mov_data(comb, targ_type, src_type,
+                        X, y, plot_params = get_mov_data(comb, targ_type,
+                                                         src_type,
                                         e, cellid, exp_type, four_downsample,
-                                        randomise)
+                                        s)
+                        # ignore edge effects
+                        pred, coefs = CV(clf,
+                                X, y, folds=folds, clf_args={'alpha': alpha},
+                                edge=edge)
+                        pred, _ = filter(pred, e['bin_freq'])
+                        pred = pred[edge: -edge]
+                        mn = y.mean(0)[edge: -edge]
+                        crr_pred = do_thresh_corr(mn, pred)#, 'pearsonr')
+                        cell_results[k][full_comb][shift].append(crr_pred)
 
-                    if randomise is not None:
-                        fname = '%s%s_%s/%s/' % (fig_path,
-                                                  randomise, str(filt),
-                                                  cellid)
-                    else:
-                        fname = '%s%s/%s/' % (fig_path,
-                                                  str(filt),
-                                                  cellid)
-                    if not os.path.exists(fname):
-                        os.makedirs(fname)
-                    print fname
-                    # ignore edge effects
-                    pred, coefs = CV(clf,
-                            X, y, folds=folds, clf_args={'alpha': alpha},
-                            edge=edge)
-                    pred, _ = filter(pred, e['bin_freq'])
-                    pred = pred[edge: -edge]
-                    coefs = np.array(coefs).mean(0)
-                    clf_vals.append([targ_type, ])
-                    mn = y.mean(0)[edge: -edge]
-                    std = np.std(y, 0)[edge: -edge]
-                    crr_pred = do_thresh_corr(mn, pred)#, 'pearsonr')
-                    #crr_pred = mean_squared_error(mn, pred)
-                    #crr_pred = r2_score(mn, pred)
-                    #crr_pred = explained_variance_score(mn, pred)
-                    if crr_pred > sig_thresh:
-                        sig_found = True
-
-                    cell_results[cellid][full_comb][targ_type][src_type] = crr_pred
-                    comb_vals['Overall'] += [crr_pred]
-                    if k in comb_vals:
-                        comb_vals[k] += [crr_pred]
-                    else:
-                        comb_vals[k] = [crr_pred]
-
-                    xcorr = []
-                    for i in range(y.shape[0]):
-                        xcorr.append(do_thresh_corr(y[i][edge: -edge], mn))
-                    crr_y = np.array(xcorr).mean()
-                    print crr_pred
-                    results[k] = [pred, mn, std, crr_pred, crr_y,
-                                          coefs, plot_params]
-                    # only do plots for the fourier trained classifier
-                #if sig_found:
-                if True:
-                    cmb = "_".join(comb)
-                    if 'Fourier' in cmb:
-                        plot_preds_fourier(cellid, results, full_targets,
-                                       fname + cmb)
-                    else:
-                        plot_preds(cellid, results, full_targets, cmb,
-                                       fname + cmb)
-
-            comb_corrs.append([comb, comb_vals])
-    # make this a boxplot
-    if randomise is not None:
-        fp = fig_path + randomise + '_'
-    else:
-        fp = fig_path
-
-    plot_summary(comb_corrs, full_targets, fp, str(filt))
-    plot_cell_summary(cell_results, fp + str(filt) + '/')
-
-    return comb_corrs
+    with open(fig_path + 'shift.pkl', 'wb') as outfile:
+        pickle.dump(cell_results, outfile, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == "__main__":
@@ -855,30 +744,27 @@ if __name__ == "__main__":
     exp_type = 'FS'
     # now its mask movie values for all predictions
     # try also whole
-    # and make box plots! 
+    # and make box plots!
     downsample = 7
     exp_types = ['FS', 'PYR', 'SOM']
-    randomisers = [None, 'generated', 'random']
-    for r in randomisers:
-        for exp_type in exp_types:
-            for filt in [0.1]:#np.arange(0.1, 1.1, 0.1):
-                print 'DOWNSAMPLE %s' % (str(downsample))
-                corrs.append(do_classification(exp_type=exp_type, min_comb=None,
-                                            max_comb=None,
-                                            targets=[['Center', 'Center'],
-                                                     ['Whole', 'Whole']
-                                                     #['Surround', 'Whole']
-                                                     ],
-                                               folds=10,
-                                            #combs=['Fourier'],
-                                            #combs=['Luminance', 'Flow'],
-                                            max_exp=None,
-                                           #targets=['Center', 'CenterWhole', 'Whole', 'WholeWhole'],
-                                           four_downsample=downsample,
-                                           #randomise='generated',
-                                           randomise=r,
-                                           alpha=0.001,
-                                           #randomise=None,
-                                           filt=filt))
+    for exp_type in exp_types:
+        for filt in [0.1]:
+            print 'DOWNSAMPLE %s' % (str(downsample))
+            corrs.append(do_lag_classification(exp_type=exp_type, min_comb=None,
+                                        max_comb=None,
+                                        targets=[['Center', 'Center'],
+                                                 ['Whole', 'Whole']
+                                                 #['Surround', 'Whole']
+                                                 ],
+                                           folds=10,
+                                        #combs=['Fourier'],
+                                        #combs=['Luminance', 'Flow'],
+                                        max_exp=None,
+                                       #targets=['Center', 'CenterWhole', 'Whole', 'WholeWhole'],
+                                       four_downsample=downsample,
+                                       #randomise='generated',                                       
+                                       alpha=0.001,
+                                       #randomise=None,
+                                       filt=filt))
     for c in corrs:
         print c[0]

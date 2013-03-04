@@ -1,6 +1,6 @@
 import matplotlib
 # force plots to file. no display. comment out to use plt.show()
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import numpy.fft as fft
 import numpy as np
 import sys
@@ -94,17 +94,61 @@ def get_flow(flow, maskSizePixel, maskLocationPixel):
     return np.array(whole_sum)[np.newaxis, :, :],\
          np.array(masked_sum)[np.newaxis, :, :], np.array(surround_sum)
 
+def get_frequencies(dat):
+    assert(dat.shape[0] == dat.shape[1])
+    mid = (dat.shape[0] / 2)
+    end = dat.shape[0]
+    freqs = []    
+#    plt.figure()
+    for i in range(1, end - mid):
+        ring = []
+        ring.append(dat[mid - i, mid - i: mid + i + 1])
+        ring.append(dat[mid + i, mid - i: mid + i + 1])
+        ring.append(dat[mid - i: mid + i + 1, mid - i])
+        ring.append(dat[mid - i: mid + i + 1, mid + i])
+        tmp = np.array(ring)
+        ring = [tmp.max(), tmp.mean()]
+        freqs.append(ring)
+    return np.array(freqs).ravel()
+
+#        datc = dat.copy()
+#        datc[mid - i, mid - i: mid + i + 1] = 1
+#        datc[mid + i, mid - i: mid + i + 1] = 1
+#        datc[mid - i: mid + i + 1, mid - i] = 1
+#        datc[mid - i: mid + i + 1, mid + i] = 1
+#        plt.subplot(3, 3, i)
+#        plt.imshow(datc)
+#    plt.show()
+
+
+def get_orientations(dat):
+    assert(dat.shape[0] == dat.shape[1])
+    mid = (dat.shape[0] / 2)
+    orients = np.array([
+                    dat[mid, :].max(),
+                    dat[:, mid].max(),
+                    dat.diagonal().max(),
+                    np.array(zip(*dat[::-1])).diagonal().max(),
+                    dat[mid, :].mean(),
+                    dat[:, mid].mean(),
+                    dat.diagonal().mean(),
+                    np.array(zip(*dat[::-1])).diagonal().mean()
+                    ])
+    return orients
+
 
 def get_fourier2D(movie, dim_lim=7):
     fouriers = []
+    orients = []
+    freqs = []
     print 'doing fourier2D'
     for i, frame in enumerate(movie):
-        if i % 100 == 0:
+        if i % 50 == 0:
             print 'frame %d of %d' % (i, len(movie))
         frame = frame / 255.
         A = fft.fftshift(fft.fft2(frame))
         added = np.sqrt(A.real ** 2 + A.imag ** 2)
-        added *= np.sign(A.imag)
+        #added *= np.sign(A.imag)
         fouriers.append(added)
     fouriers = np.array(fouriers)
     tmp = fouriers.max(0)
@@ -120,10 +164,17 @@ def get_fourier2D(movie, dim_lim=7):
         diff_y = 1
     fouriers = fouriers[:, np.maximum(midx - diff_x, 0):midx + diff_x + 1, :]
     fouriers = fouriers[:, :,  np.maximum(midy - diff_y, 0):midy + diff_y + 1]
+
+    for f in fouriers:
+        orients.append(get_orientations(f))
+        freqs.append(get_frequencies(f))
+    freqs = np.array(freqs)
+    orients = np.array(orients)
     # correct for really big values
-    thresh = fouriers.mean() + 4 * np.std(fouriers)
-    fouriers[fouriers > thresh] = thresh
-    return fouriers
+ #   thresh = fouriers.mean() + 4 * np.std(fouriers)
+#    fouriers[fouriers > thresh] = thresh
+#    fouriers[fouriers < -thresh] = -thresh
+    return fouriers, freqs, orients
 
 
 def plot_movie(lum, con, flow, four, movie, fname):
@@ -262,19 +313,36 @@ def get_masked_data(data, maskSizePixel, maskLocationPixel, parts=[3, 3]):
                                    maskSizePixel[1] / 2)
     box_edges += (maskLocationPixel - maskSizePixel / 2).astype(np.int)
     mask_inds += (maskLocationPixel - maskSizePixel / 2).astype(np.int)
-    masked = np.copy(data)
+    #masked = np.copy(data)
     surround = np.copy(data)
-    masked = masked[:, np.maximum(box_edges[0, 0], 0):box_edges[1, 0] + 1, :]
-    masked = masked[:, :, np.maximum(box_edges[0, 1], 0):box_edges[1, 1] + 1]
+
+    dim_x = box_edges[1, 0] - box_edges[0, 0]
+    dim_y = box_edges[1, 1] - box_edges[0, 1]
+    dims = np.array(data.shape)
+    dims[1] = dim_x
+    dims[2] = dim_y
+    masked = np.zeros(dims)
+    for x in range(dim_x):
+        for y in range(dim_y):
+            xind = box_edges[0, 0] + x
+            yind = box_edges[0, 1] + y
+            if (xind < 0 or xind >= data.shape[1] or
+                yind < 0 or yind >= data.shape[2]):
+                continue
+            masked[:, x, y] = data[:, xind, yind]
+
+
+#    masked = masked[:, np.maximum(box_edges[0, 0], 0):box_edges[1, 0] + 1, :]
+#    masked = masked[:, :, np.maximum(box_edges[0, 1], 0):box_edges[1, 1] + 1]
     for ind in inv_mask_inds:
         if (ind[0] > 0 and ind[0] < masked.shape[1]
             and ind[1] > 0 and ind[1] < masked.shape[2]):
-            masked[:, ind[0], ind[1]] = np.nan
+            masked[:, ind[0], ind[1]] = 0
 
     for ind in mask_inds:
         if (ind[0] > 0 and ind[0] < surround.shape[1]
             and ind[1] > 0 and ind[1] < surround.shape[2]):
-            surround[:, ind[0], ind[1]] = np.nan
+            surround[:, ind[0], ind[1]] = 0
 
     # split surround
     xs = surround.shape[1] / parts[0]
@@ -300,7 +368,8 @@ def get_masked_data(data, maskSizePixel, maskLocationPixel, parts=[3, 3]):
 
 
 if __name__ == "__main__":
-    exp_type = 'PYR'
+
+    exp_type = 'SOM'
     failed_count = 0
     success_count = 0
     ephys = load_EphysData(exp_type)
@@ -316,7 +385,7 @@ if __name__ == "__main__":
         if os.path.exists(dat_path + target_fname):
             print 'already exists, skipping ', target_fname
             success_count += 1
-            continue
+#            continue
 
         if not os.path.exists(dat_path + flow_fname):
             print 'flow data missing, skipping ', flow_fname
@@ -348,42 +417,65 @@ if __name__ == "__main__":
 
         lum_mask = get_luminance(masked)[np.newaxis, :]
         con_mask = get_contrast(masked)[np.newaxis, :]
-        four_mask = get_fourier2D(masked)[np.newaxis, :, :, :]
+        four_mask, freq_mask, orient_mask = get_fourier2D(masked)
+        four_mask = four_mask[np.newaxis, :, :, :]
+        freq_mask = freq_mask[np.newaxis, :, :]
+        orient_mask = orient_mask[np.newaxis, :, :]
 
         lum_surr = []
         con_surr = []
         four_surr = []
+        freq_surr = []
+        orient_surr = []
         for s in range(surround.shape[0]):
             lum_surr.append(get_luminance(surround[s]))
             con_surr.append(get_contrast(surround[s]))
-            four_surr.append(get_fourier2D(surround[s]))
+            f, fr, o = get_fourier2D(surround[s])
+            four_surr.append(f)
+            freq_surr.append(fr)
+            orient_surr.append(o)
         lum_surr = np.array(lum_surr)
         con_surr = np.array(con_surr)
         four_surr = np.array(four_surr)
+        freq_surr = np.array(freq_surr)
+        orient_surr = np.array(orient_surr)
 
         lum_whole = get_luminance(movie)[np.newaxis, :]
         con_whole = get_contrast(movie)[np.newaxis, :]
-        four_whole = get_fourier2D(movie)[np.newaxis, :, :, :]
+        four_whole, freq_whole, orient_whole = get_fourier2D(movie)
+        four_whole = four_whole[np.newaxis, :, :, :]
+        freq_whole = freq_whole[np.newaxis, :, :]
+        orient_whole = orient_whole[np.newaxis, :, :]
+
         flow_whole, flow_mask, flow_surr = get_flow(flow,
                                     e['maskSizePixel'], e['maskLocationPixel'])
         movie = movie[np.newaxis, :, :, :]
         masked = masked[np.newaxis, :, :, :]
         np.savez(dat_path + target_fname,
                    lum_mask=lum_mask, con_mask=con_mask, flow_mask=flow_mask,
-                   four_mask=four_mask, masked=masked,
+                   four_mask=four_mask,
+                   freq_mask=freq_mask, orient_mask=orient_mask,
+                    masked=masked,
                    lum_whole=lum_whole, con_whole=con_whole,
                    flow_whole=flow_whole,
-                   four_whole=four_whole, movie=movie,
+                   four_whole=four_whole, freq_whole=freq_whole,
+                   orient_whole=orient_whole, movie=movie,
                    lum_surr=lum_surr, con_surr=con_surr, flow_surr=flow_surr,
-                   four_surr=four_surr, surround=surround)
+                   four_surr=four_surr, freq_surr=freq_surr,
+                   orient_surr=orient_surr, surround=surround)
 
         scipy.io.savemat(dat_path + target_fname[:-3] + '.mat',
             {'lum_mask': lum_mask, 'con_mask': con_mask,
-            'flow_mask': flow_mask, 'four_mask': four_mask, 'masked': masked,
+            'flow_mask': flow_mask, 'four_mask': four_mask,
+            'freq_mask': freq_mask, 'orient_mask': orient_mask,
+            'masked': masked,
             'lum_whole': lum_whole, 'con_whole': con_whole,
-            'flow_whole': flow_whole, 'four_whole': four_whole, 'movie': movie,
+            'flow_whole': flow_whole, 'four_whole': four_whole, 
+            'freq_whole': freq_whole,
+            'orient_whole': orient_whole, 'movie': movie,
             'lum_surr': lum_surr, 'con_surr': con_surr, 'flow_surr': flow_surr,
-            'four_surr': four_surr, 'surround': surround})
+            'four_surr': four_surr, 'freq_surr': freq_surr,
+                   'orient_surr': orient_surr, 'surround': surround})
 
         plot_movie(lum_mask, con_mask, flow_mask, four_mask, masked,
                    fig_path + e['cellid'] + '_masked')

@@ -1,14 +1,15 @@
 from scipy.stats import pearsonr, spearmanr
 import numpy as np
-
+from sklearn.metrics import r2_score
 
 def do_thresh_corr(x, y, threshold=0.05, corr_type='spearmanr'):
-    if corr_type == 'pearsonr':
-        c, p = pearsonr(x, y)
-    else:
-        c, p = spearmanr(x, y)
-    if p > threshold or np.isnan(c):
-        c = 0.
+    c = np.maximum(r2_score(x, y), 0)
+#    if corr_type == 'pearsonr':
+#        c, p = pearsonr(x, y)
+#    else:
+#        c, p = spearmanr(x, y)
+#    if p > threshold or np.isnan(c):
+#        c = 0.
     return c
 
 

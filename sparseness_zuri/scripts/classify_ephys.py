@@ -5,7 +5,6 @@ import numpy as np
 import sys
 import pylab as plt
 sys.path.append('..')
-
 sys.path = ['/home/chris/programs/scikit-learn'] + sys.path
 import numpy.fft as fft
 import startup
@@ -14,7 +13,20 @@ from data_utils.utils import filter
 from data_utils.load_ephys import load_EphysData, load_parsed_movie_dat
 #from sklearn.linear_model import LinearRegression as clf
 #from sklearn.linear_model import Ridge as clf
+#from sklearn.pls import PLSCanonical as clf
+#clf_args={'n_components': 49}
+#from sklearn.pls import PLSRegression  as clf
+#clf_args={}
+#from sklearn.pls import CCA  as clf
+clf_args={}
+#
 from sklearn.linear_model import Lasso as clf
+#from sklearn.gaussian_process import GaussianProcess as clf
+clf_args={'alpha': 0.001}
+#from sklearn.linear_model import LassoLars as clf
+#clf_args={'alpha': 0.0001}
+
+
 from sklearn.linear_model import LassoCV
 from sklearn.cross_validation import KFold, LeaveOneOut
 from sklearn.preprocessing import StandardScaler
@@ -38,6 +50,7 @@ print 'hooraz' if Client else 'blag'
 rc = Client()
 dview = rc[:]
 dview.execute('import numpy as np')
+
 print '%d engines found' % len(rc.ids)
 
 
@@ -61,6 +74,7 @@ def classify(cv):
             pass
     pred = np.nan_to_num(regr.predict(Xt))
     return (pred, coef)
+    #return (pred, regr.alpha_)
         #return (train, test)
 
 
@@ -264,7 +278,7 @@ def plot_cell_summary(res, fig_path, extras=''):
             x += 2
         plt.plot([0, x], [0, 0], '--')
         plt.xlim(0, x)
-        plt.ylim(-1, 1)
+        plt.ylim(0, 1)
         plt.xticks(xtcks, lbls, rotation='vertical')
         adjust_spines(ax, ['bottom', 'left'])
         plt.ylabel('Prediction Correlation to Experimental Mean')
@@ -323,7 +337,7 @@ def plot_summary(comb_corrs, targets, fig_path, extras=''):
                 col = '0.3'
             else:
                 col = colors[j]
-            do_box_plot(np.array(dat), np.array([i + offset]), col)
+            do_box_plot(np.array(dat), np.array([i + offset]), col, widths=[0.2])
             #do_spot_scatter_plot(np.array(dat), np.array([i + offset]), col)
             offset += 0.3
             if i == 0:
@@ -335,7 +349,7 @@ def plot_summary(comb_corrs, targets, fig_path, extras=''):
     plt.xticks(range(len(xaxis)), xaxis, rotation='vertical')
     plt.xlim(-1, len(xaxis) + 1)
     plt.plot([-1, len(xaxis) + 1], [0, 0], '--')
-    plt.ylim(-1, 1)
+    plt.ylim(0, 1)
     plt.subplots_adjust(left=0.05, bottom=0.5, right=0.97, top=0.95,
                        wspace=0.3, hspace=0.34)
     plt.legend(boxes, lbls, frameon=False, loc=4)
@@ -394,6 +408,16 @@ def plot_preds_fourier(cellid, results, targets, fname):
     fig.savefig(fname + '.eps')
     fig.savefig(fname + '.png')
     plt.close(fig)
+
+
+
+
+def plot_preds_freq(cellid, results, targets, fname):
+    return None
+
+def plot_preds_orient(cellid, results, targets, fname):
+    return None
+
 
 
 def plot_preds(cellid, results, targets, source, fname):
@@ -502,12 +526,12 @@ def lassoCV(X, y):
 def get_mov_data(comb, targ_type, src_type, e, expdate, exp_type,
                  four_downsample=None, randomise=None, shift=0):
 
-    lum_mask, con_mask, flow_mask,\
-                    four_mask, four_mask_shape,\
-                    lum_surr, con_surr, flow_surr,\
-                    four_surr, four_surr_shape,\
-                    lum_whole, con_whole, flow_whole,\
-                    four_whole, four_whole_shape \
+    lum_mask, con_mask, flow_mask, four_mask, four_mask_shape,\
+            freq_mask, orient_mask,\
+            lum_surr, con_surr, flow_surr, four_surr, four_surr_shape,\
+            freq_surr, orient_surr,\
+            lum_whole, con_whole, flow_whole, four_whole, four_whole_shape,\
+            freq_whole, orient_whole\
                     = load_parsed_movie_dat(expdate, exp_type, four_downsample)
 
     flow_mask = bin_flow(flow_mask)
@@ -517,6 +541,8 @@ def get_mov_data(comb, targ_type, src_type, e, expdate, exp_type,
     idx_bar = []
     idx_flow = []
     idx_four = []
+    idx_freq = []
+    idx_orient = []
     lbl_bar = []
     four_shape = []
     all_dat = None
@@ -542,7 +568,7 @@ def get_mov_data(comb, targ_type, src_type, e, expdate, exp_type,
         elif targ_type == 'Whole':
             source = e['psth_w_gen']
     edge = e['edge']
-    print src_type, targ_type
+    print src_type, targ_type, comb
     if src_type == 'Center':
         if 'Luminance' in comb:
             for l in lum_mask:
@@ -579,7 +605,24 @@ def get_mov_data(comb, targ_type, src_type, e, expdate, exp_type,
                 all_dat = append_Nones(all_dat, f, 1)
                 idx_four += [range(pre_len, all_dat.shape[1])]
                 four_shape.append(four_mask_shape)
-    elif src_type == 'Surround':
+        if 'Frequency' in comb:
+            for f in freq_mask:
+                if all_dat != None:
+                    pre_len = all_dat.shape[1]
+                else:
+                    pre_len = 0
+                all_dat = append_Nones(all_dat, f, 1)
+                idx_freq += [range(pre_len, all_dat.shape[1])]
+        if 'Orientation' in comb:
+            for f in orient_mask:
+                if all_dat != None:
+                    pre_len = all_dat.shape[1]
+                else:
+                    pre_len = 0
+                all_dat = append_Nones(all_dat, f, 1)
+                idx_orient += [range(pre_len, all_dat.shape[1])]
+
+    elif src_type == 'Surround':        
         if 'Luminance' in comb:
             for l in lum_surr:
                 all_dat = append_Nones(all_dat,
@@ -614,7 +657,22 @@ def get_mov_data(comb, targ_type, src_type, e, expdate, exp_type,
                 all_dat = append_Nones(all_dat, f, 1)
                 idx_four += [range(pre_len, all_dat.shape[1])]
                 four_shape.append(four_surr_shape)
-
+        if 'Frequency' in comb:
+            for f in freq_surr:
+                if all_dat != None:
+                    pre_len = all_dat.shape[1]
+                else:
+                    pre_len = 0
+                all_dat = append_Nones(all_dat, f, 1)
+                idx_freq += [range(pre_len, all_dat.shape[1])]
+        if 'Orientation' in comb:
+            for f in orient_surr:
+                if all_dat != None:
+                    pre_len = all_dat.shape[1]
+                else:
+                    pre_len = 0
+                all_dat = append_Nones(all_dat, f, 1)
+                idx_orient += [range(pre_len, all_dat.shape[1])]
     elif src_type == 'Whole':
         if 'Luminance' in comb:
             for l in lum_whole:
@@ -652,43 +710,22 @@ def get_mov_data(comb, targ_type, src_type, e, expdate, exp_type,
                 all_dat = append_Nones(all_dat, f, 1)
                 idx_four += [range(pre_len, all_dat.shape[1])]
                 four_shape.append(four_whole_shape)
-    elif src_type == 'Generated':
-        if 'Luminance' in comb:
-            for l in lum_whole:
-                r = gen_data(l[:, np.newaxis], e['bin_freq'])
-                all_dat = append_Nones(all_dat, r, 1)
-                idx_bar += [all_dat.shape[1] - 1]
-                lbl_bar += ['Luminance']
-        if 'Contrast' in comb:
-            for c in con_whole:
-                r = gen_data(c[:, np.newaxis], e['bin_freq'])
-                all_dat = append_Nones(all_dat, r, 1)
-                idx_bar += [all_dat.shape[1] - 1]
-                lbl_bar += ['Contrast']
-        if 'Flow' in comb:
-            for f in flow_whole:
+        if 'Frequency' in comb:
+            for f in freq_whole:
                 if all_dat != None:
                     pre_len = all_dat.shape[1]
                 else:
                     pre_len = 0
-                r = gen_data(f[:, :-1], e['bin_freq'])
-                all_dat = append_Nones(all_dat, r, 1)
-                idx_flow += [range(pre_len, all_dat.shape[1])]
-            for f in flow_whole:
-                r = gen_data(f[:, -1:], e['bin_freq'])
-                all_dat = append_Nones(all_dat, r, 1)
-                idx_bar += [all_dat.shape[1] - 1]
-                lbl_bar += ['Flow Vel']
-        if 'Fourier' in comb:
-            for f in four_whole:
+                all_dat = append_Nones(all_dat, f, 1)
+                idx_freq += [range(pre_len, all_dat.shape[1])]
+        if 'Orientation' in comb:
+            for f in orient_whole:
                 if all_dat != None:
                     pre_len = all_dat.shape[1]
                 else:
                     pre_len = 0
-                r = gen_data(f, e['bin_freq'])
-                all_dat = append_Nones(all_dat, r, 1)
-                idx_four += [range(pre_len, all_dat.shape[1])]
-                four_shape.append(four_mask_shape)
+                all_dat = append_Nones(all_dat, f, 1)
+                idx_orient += [range(pre_len, all_dat.shape[1])]
 
     all_dat = np.tile(all_dat, [source.shape[0], 1, 1])
     plot_params = {}
@@ -713,7 +750,7 @@ def append_Nones(target, addition, axis=1):
 
 
 def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
-                        'Fourier'],
+                        'Orientation', 'Frequency', 'Fourier'],
                       targets=[['Center', 'Center'], ['Center', 'Whole'],
                                ['Whole', 'Center'], ['Whole', 'Whole'],
                                ['Surround', 'Whole']],
@@ -732,7 +769,7 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
     if os.path.exists(pth):
         if os.path.exists(pth + '/summary_all.csv'):
             print pth, ' already exists. Skipping'
-            #return ['skipped']
+            return ['skipped']
     else:
         os.makedirs(pth)
 
@@ -749,10 +786,15 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
         min_comb = 0
 
     cell_results = {}
-    for num_combs in [1, len(combs)]:
+    num_combs = [1]
+    if len(combs) > 1:
+        num_combs.append(len(combs))
+    for num_combs in [1, 2]:#, len(combs)]:
         for comb in itertools.combinations(combs, num_combs):
             print comb
             full_comb = str(num_combs) + '_' + "_".join(comb)
+            if num_combs == 2 and ('Frequency' not in comb or 'Orientation' not in comb):
+                continue
             comb_vals = {'Overall': []}
             for i, e in enumerate(dat.values()):
                 if max_exp is not None and i >= max_exp:
@@ -797,17 +839,19 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
                     print fname
                     # ignore edge effects
                     pred, coefs = CV(clf,
-                            X, y, folds=folds, clf_args={'alpha': alpha},
+                            X, y, folds=folds, clf_args=clf_args,
                             edge=edge)
+
+                    coefs = np.array(coefs).mean(0)
                     pred, _ = filter(pred, e['bin_freq'])
                     pred = pred[edge: -edge]
-                    coefs = np.array(coefs).mean(0)
+
                     clf_vals.append([targ_type, ])
                     mn = y.mean(0)[edge: -edge]
                     std = np.std(y, 0)[edge: -edge]
-                    crr_pred = do_thresh_corr(mn, pred)#, 'pearsonr')
+                    #crr_pred = do_thresh_corr(mn, pred)#, 'pearsonr')
                     #crr_pred = mean_squared_error(mn, pred)
-                    #crr_pred = r2_score(mn, pred)
+                    crr_pred = np.maximum(r2_score(mn, pred), 0)
                     #crr_pred = explained_variance_score(mn, pred)
                     if crr_pred > sig_thresh:
                         sig_found = True
@@ -852,11 +896,12 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
 
 if __name__ == "__main__":
     corrs = []
-    exp_type = 'FS'
+    
     # now its mask movie values for all predictions
     # try also whole
     # and make box plots! 
     downsample = 7
+    print 'mean or max!'
     exp_types = ['FS', 'PYR', 'SOM']
     randomisers = [None, 'generated', 'random']
     for r in randomisers:
@@ -872,7 +917,7 @@ if __name__ == "__main__":
                                                folds=10,
                                             #combs=['Fourier'],
                                             #combs=['Luminance', 'Flow'],
-                                            max_exp=None,
+                                            #max_exp=8,
                                            #targets=['Center', 'CenterWhole', 'Whole', 'WholeWhole'],
                                            four_downsample=downsample,
                                            #randomise='generated',

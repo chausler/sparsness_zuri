@@ -74,8 +74,8 @@ cell_data = {  # SOM DATA [Receptive field file, mask size, scale_without_crop]
 # whether the stimulus was cropped or not
 #scale_without_crop_SOM 
 
-def load_movie_data(expdate, exp_type='SOM'):
-    dat = np.load(data_path + 'ephys/' + exp_type + '/' + expdate + '_processed.npz',
+def load_movie_data(cellid, exp_type='SOM'):
+    dat = np.load(data_path + 'ephys/' + exp_type + '/' + cellid + '_processed.npz',
               'rb')
     return dat
 
@@ -93,13 +93,15 @@ def downsample_four(four, size):
     return new_four
 
 
-def load_parsed_movie_dat(expdate, exp_type='SOM', four_downsample=None):
-    mov = load_movie_data(expdate, exp_type)
+def load_parsed_movie_dat(cellid, exp_type='SOM', four_downsample=None):
+    mov = load_movie_data(cellid, exp_type)
     #mask movie data
     lum_mask = mov['lum_mask']
     con_mask = mov['con_mask']
     flow_mask = mov['flow_mask']
     four_mask = mov['four_mask']
+    freq_mask = mov['freq_mask']
+    orient_mask = mov['orient_mask']
     if four_downsample != None:
         four_mask = downsample_four(four_mask, four_downsample)
     four_mask_shape = four_mask.shape[2:]
@@ -110,6 +112,8 @@ def load_parsed_movie_dat(expdate, exp_type='SOM', four_downsample=None):
     con_surr = mov['con_surr']
     flow_surr = mov['flow_surr']
     four_surr = mov['four_surr']
+    freq_surr = mov['freq_surr']
+    orient_surr = mov['orient_surr']
     if four_downsample != None:
         four_surr = downsample_four(four_surr, four_downsample)
     four_surr_shape = four_surr.shape[2:]
@@ -120,15 +124,20 @@ def load_parsed_movie_dat(expdate, exp_type='SOM', four_downsample=None):
     con_whole = mov['con_whole']
     flow_whole = mov['flow_whole']
     four_whole = mov['four_whole']
+    freq_whole = mov['freq_whole']
+    orient_whole = mov['orient_whole']
     if four_downsample != None:
         four_whole = downsample_four(four_whole, four_downsample)
     four_whole_shape = four_whole.shape[2:]
     four_whole = four_whole.reshape(four_whole.shape[0],
                                     four_whole.shape[1], -1)
-
+    mov.close()
     return lum_mask, con_mask, flow_mask, four_mask, four_mask_shape,\
+            freq_mask, orient_mask,\
             lum_surr, con_surr, flow_surr, four_surr, four_surr_shape,\
-            lum_whole, con_whole, flow_whole, four_whole, four_whole_shape
+            freq_surr, orient_surr,\
+            lum_whole, con_whole, flow_whole, four_whole, four_whole_shape,\
+            freq_whole, orient_whole
 
 
 def generate_psth(src):
@@ -154,7 +163,7 @@ def generate_psth(src):
     return np.array(targ)
 
 
-def load_EphysData(exp_type='SOM', filt=0.2):
+def load_EphysData(exp_type='SOM', filt=0.1):
 
     #ignore 120201
     mat = scipy.io.loadmat(extern_data_path +
@@ -258,10 +267,10 @@ def load_EphysData(exp_type='SOM', filt=0.2):
         psth_c_shift = []
         psth_w_shift = []
         psth_s_shift = []
-        shifts = np.arange(-35, 36, 5).tolist()
-        shifts += range(-5,5)
-        shifts = np.array(list(set(shifts)))
-        shifts.sort()
+        #shifts = np.arange(-15, 16, 5).tolist()
+        shifts = range(-10, 1)
+#        shifts = np.array(list(set(shifts)))
+#        shifts.sort()
 
         for shift in shifts:
             idx = deque(np.arange(psth_c.shape[1]))
@@ -276,6 +285,13 @@ def load_EphysData(exp_type='SOM', filt=0.2):
         psth_c_shift = np.array(psth_c_shift)
         psth_w_shift = np.array(psth_w_shift)
         psth_s_shift = np.array(psth_s_shift)
+
+        idx = deque(np.arange(psth_c.shape[1]))
+        idx.rotate(-4)
+        psth_c = psth_c[:, idx]
+        psth_w = psth_w[:, idx]
+        if psth_s is not None:
+            psth_s = psth_s[:, idx]
 
         # do generate
         psth_c_gen = generate_psth(psth_c)
@@ -338,4 +354,19 @@ def load_EphysData(exp_type='SOM', filt=0.2):
     return all_dat
 
 if __name__ == "__main__":
-    load_EphysData('PYR')
+    exp_type = 'FS'
+    dat = load_EphysData(exp_type)
+    for e in dat.values():
+        cellid = e['cellid']
+        mov = load_movie_data(cellid, exp_type)
+        load_parsed_movie_dat(cellid, exp_type)
+        four_mask = mov['four_mask']
+        four_whole = mov['four_whole']
+        print four_mask.shape, four_whole.shape
+#        import pylab as plt
+#        plt.figure()
+#        plt.subplot(121)
+#        plt.hist(np.log(four_mask.ravel()), 100)
+#        plt.subplot(122)
+#        plt.hist(four_whole.ravel(), 100)
+#        plt.show()

@@ -2,23 +2,31 @@ import sys
 sys.path.append('..')
 from startup import *
 import numpy as np
-from scipy.stats import pearsonr, spearmanr
+import scipy.stats
 import pylab as plt
-from plotting.utils import adjust_spines
+from plotting.utils import adjust_spines, do_box_plot
 from data_utils.load_ephys import load_EphysData
 import os
 from data_utils.utils import do_thresh_corr, corr_trial_to_mean
+
+
 # Sub directory of the figure path to put the plots in
 
 exp_types = ['FS', 'PYR', 'SOM']
-filters = [0.1] #np.arange(0.1, 1.1, 0.1)
+groups = ['R^2: Trial to Mean', 'Avg Activation', 'R^2: Trial Types']
+colors = ['r', 'b', 'g', 'y', 'c', 'm']
+headers = ['CellId', 'XCorr Center', 'XCorr Whole', 'XCorr Center',
+                       'Avg Center', 'Avg Whole', 'Avg Surround',
+                       'XCorr C v W', 'XCorr C v S', 'XCorr S v W']
+filters = [0.1]
 norm = True
 for exp_type in exp_types:
-    for filt in filters:        
-        dat = load_EphysData(exp_type, filt=filt)
-        csv_vals = []
-        for k in sorted(dat.keys()):
-            for randomise in [None, 'generated', 'random']:
+    for filt in filters:
+        for randomise in [None, 'generated', 'random']:
+            dat = load_EphysData(exp_type, filt=filt)
+            csv_vals = []
+            cellids = []
+            for k in sorted(dat.keys()):
                 vals = []
                 d = dat[k]
                 print 'doing ', d['cellid']
@@ -40,25 +48,23 @@ for exp_type in exp_types:
                 if not os.path.exists(f_path):
                     os.makedirs(f_path)
                 edge = d['edge']
-                print edge
-                vals.append(d['cellid'])
                 mn_c = psth_c.mean(0)
                 std_c = np.std(psth_c, 0)
                 xcorr_c = corr_trial_to_mean(psth_c, mn_c)
-                vals.append('%.2f' % xcorr_c)
+                vals.append(xcorr_c)
                 mn_w = psth_w.mean(0)
                 std_w = np.std(psth_w, 0)
                 xcorr_w = corr_trial_to_mean(psth_w, mn_w)
-                vals.append('%.2f' % xcorr_w)
+                vals.append(xcorr_w)
                 mx = np.maximum(mn_c.max(), mn_w.max())
                 if psth_s is not None:
                     mn_s = psth_s.mean(0)
                     std_s = np.std(psth_s, 0)
                     xcorr_s = corr_trial_to_mean(psth_s, mn_s)
-                    vals.append('%.2f' % xcorr_s)
+                    vals.append(xcorr_s)
                     mx = np.maximum(mx, mn_s.max())
                 else:
-                    vals.append('')
+                    vals.append(0)
                 if norm:
                     mn_c = mn_c / mx
                     std_c = std_c / mx
@@ -114,12 +120,20 @@ for exp_type in exp_types:
                 tks = bins[0::2]
                 hst_ax1 = plt.subplot(534)
                 cnts, _, _ = plt.hist(mn_c.ravel(), bins)
+                y = plt.ylim()[1]
+                avg = mn_c.ravel().mean()
+                vals.append(avg)
+                plt.text(0.7, y * 0.9, 'Avg Act: %.2f' % avg)
                 hist_mx = np.maximum(cnts.max(), hist_mx)
                 plt.xticks(tks)
                 adjust_spines(hst_ax1, ['bottom', 'left'])
 
                 hst_ax2 = plt.subplot(535)
                 cnts, _, _ = plt.hist(mn_w.ravel(), bins)
+                y = plt.ylim()[1]
+                avg = mn_w.ravel().mean()
+                vals.append(avg)
+                plt.text(0.7, y * 0.9, 'Avg Act: %.2f' % avg)
                 hist_mx = np.maximum(cnts.max(), hist_mx)
                 plt.xticks(tks)
                 plt.title('Mean Activation Histogram')
@@ -128,10 +142,16 @@ for exp_type in exp_types:
                 if psth_s is not None:
                     ax = plt.subplot(536)
                     cnts, _, _ = plt.hist(mn_s.ravel(), bins)
+                    y = plt.ylim()[1]
+                    avg = mn_s.ravel().mean()
+                    vals.append(avg)
+                    plt.text(0.7, y * 0.9, 'Avg Act: %.2f' % avg)
                     hist_mx = np.maximum(cnts.max(), hist_mx)
                     plt.xticks(tks)
                     adjust_spines(ax, ['bottom', 'left'])
                     ax.set_ylim(0, hist_mx)
+                else:
+                    vals.append(0)
 
                 hst_ax1.set_ylim(0, hist_mx)
                 hst_ax2.set_ylim(0, hist_mx)
@@ -139,7 +159,7 @@ for exp_type in exp_types:
                 ax = plt.subplot(537)
                 plt.hold(True)
                 cr = do_thresh_corr(mn_w, mn_c)
-                vals.append('%.2f' % cr)
+                vals.append(cr)
                 plt.plot(mn_w, label='Whole', color=clr_w, linewidth=1.5)
                 #plt.fill_between(range(psth_w.shape[1]), mn_c, mn_w,
                 #                facecolor=clr2)
@@ -156,7 +176,7 @@ for exp_type in exp_types:
                 if psth_s is not None:
                     plt.hold(True)
                     cr = do_thresh_corr(mn_s, mn_c)
-                    vals.append('%.2f' % cr)
+                    vals.append(cr)
                     plt.plot(mn_s, label='Surround', color=clr_s,
                              linewidth=1.5)
                     #plt.fill_between(range(psth_s.shape[1]), mn_c,
@@ -173,7 +193,7 @@ for exp_type in exp_types:
                     ax = plt.subplot(539)
                     plt.hold(True)
                     cr = do_thresh_corr(mn_s, mn_w)
-                    vals.append('%.2f' % cr)
+                    vals.append(cr)
                     plt.plot(mn_s, label='Surround', color=clr_s,
                              linewidth=1.5)
                     #plt.fill_between(range(psth_s.shape[1]), mn_c,
@@ -187,8 +207,8 @@ for exp_type in exp_types:
                     ylim = plt.ylim(0, 1)
                     plt.ylim([-0.01, ylim[1]])
                 else:
-                    vals.append('')
-                    vals.append('')
+                    vals.append(0)
+                    vals.append(0)
 
                 ax = plt.subplot(5, 3 ,10)
                 plt.hold(True)
@@ -257,9 +277,61 @@ for exp_type in exp_types:
                 #plt.show()
                 plt.close(fig)
                 csv_vals.append(vals)
-        f = open(f_path + 'corrs.csv', 'w')
-        for v in csv_vals:
-            f.write("\t".join(v))
-            f.write('\n')
-        f.close()
+                cellids.append(d['cellid'])
+
+
+            csv_vals = np.array(csv_vals)
+            fig = plt.figure()
+            ax = plt.subplot(111)
+            adjust_spines(ax, ['bottom', 'left'])
+            xvals = []
+            xlbls = []
+            offset = -1
+            divider = 3
+            for i in range(csv_vals.shape[1]):
+                col = colors[i % divider]
+                if (i % divider == 0):
+                    offset += 2
+                    plt.text(offset, 1, groups[i / divider])
+                if csv_vals[:, i].sum() > 0:
+                    do_box_plot(csv_vals[:, i], np.array([offset]), col,
+                                widths=[0.7])
+
+                    inds = np.arange(divider)
+                    inds = inds[inds != i % divider]
+                    base_ind = i / divider
+                    p_offset = -0.2
+                    for ind in inds:
+                        if csv_vals[:, base_ind + ind].sum() == 0:
+                            continue
+                        stat, p = scipy.stats.ttest_ind(csv_vals[:, i],
+                                                    csv_vals[:, base_ind + ind])
+                        if p < 0.05:
+                            plt.scatter(offset + p_offset, 0.95, c=colors[ind],
+                                        edgecolor=colors[ind],
+                                        marker='*')
+                            p_offset *= -1
+                    xvals.append(offset)
+                    xlbls.append(headers[i + 1])
+                offset += 1
+            plt.xticks(xvals, xlbls, rotation='vertical')
+            plt.xlim(0, offset)
+            plt.ylim(0, 1.05)
+            plt.subplots_adjust(left=0.05, bottom=0.21, right=0.98, top=0.98,
+                       wspace=0.3, hspace=0.34)
+
+            fname = '%s%s' % (f_path, 'initial_summary')
+            fig.savefig(fname + '.eps')
+            fig.savefig(fname + '.png')
+            #plt.show()
+            plt.close(fig)
+
+            f = open(f_path + 'corrs.csv', 'w')
+            f.write("\t".join(headers) + '\n')
+            for c, v in zip(cellids, csv_vals):
+                v = ['%.2f' % vv for vv in v]
+                f.write(c + "\t")
+                f.write("\t".join(v))
+                f.write('\n')
+            f.close()
 

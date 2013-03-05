@@ -95,11 +95,6 @@ def CV(clf, X, y, folds=20, clf_args={}, clf_fit_args={},
     return np.array(preds), np.array(coefs)
 
 
-
-
-
-
-
 # The bin size in degrees for flow directions
 bin_ang = 45
 div = 360. / bin_ang
@@ -176,7 +171,7 @@ def get_mov_data(comb, targ_type, src_type, e, cellid, exp_type,
             source = e['psth_w_gen']
 
     edge = e['edge']
-    
+
     if src_type == 'Center':
         if 'Luminance' in comb:
             for l in lum_mask:
@@ -343,6 +338,7 @@ def get_mov_data(comb, targ_type, src_type, e, cellid, exp_type,
     plot_params['four_shape'] = four_shape
     return all_dat, source, plot_params
 
+
 def append_Nones(target, addition, axis=1):
     """Append to an array if it exists, otherwise make the array equal to
     addition """
@@ -460,24 +456,26 @@ if __name__ == "__main__":
     # and make box plots!
     downsample = 7
     exp_types = ['FS', 'PYR', 'SOM']
-    for exp_type in exp_types:
-        for filt in [0.1]:
-            print 'DOWNSAMPLE %s' % (str(downsample))
-            corrs.append(do_lag_classification(exp_type=exp_type, min_comb=None,
-                                        max_comb=None,
-                                        targets=[['Center', 'Center'],
-                                                 ['Whole', 'Whole']
-                                                 #['Surround', 'Whole']
-                                                 ],
-                                           folds=10,
-                                        #combs=['Fourier'],
-                                        #combs=['Luminance', 'Flow'],
-                                        max_exp=None,
-                                       #targets=['Center', 'CenterWhole', 'Whole', 'WholeWhole'],
-                                       four_downsample=downsample,
-                                       #randomise='generated',
-                                       alpha=0.001,
-                                       #randomise=None,
-                                       filt=filt))
+    randomisers = [None, 'generated', 'random']
+    for r in randomisers:
+        for exp_type in exp_types:
+            for filt in [0.1]:
+                print 'DOWNSAMPLE %s' % (str(downsample))
+                corrs.append(do_lag_classification(exp_type=exp_type, min_comb=None,
+                                            max_comb=None,
+                                            targets=[['Center', 'Center'],
+                                                     ['Whole', 'Whole']
+                                                     #['Surround', 'Whole']
+                                                     ],
+                                               folds=10,
+                                            #combs=['Fourier'],
+                                            #combs=['Luminance', 'Flow'],
+                                            max_exp=None,
+                                           #targets=['Center', 'CenterWhole', 'Whole', 'WholeWhole'],
+                                           four_downsample=downsample,
+                                           #randomise='generated',
+                                           alpha=0.001,
+                                           randomise=r,
+                                           filt=filt))
     for c in corrs:
         print c[0]

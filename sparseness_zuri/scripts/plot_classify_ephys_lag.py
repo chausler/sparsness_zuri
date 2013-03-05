@@ -179,7 +179,7 @@ for exp_type in ['FS', 'PYR', 'SOM']:
                     val = cell_results[cell][k][cmb][s]['crr_pred']
                     shift_max[k][s][cell].append(val)
 
-    fig4 = plt.figure(figsize=(12,8))
+    fig4 = plt.figure(figsize=(14, 8))
     cnt = 1
     shifts = np.array(shift_max.values()[0].keys(), dtype=np.int)
     shifts.sort()
@@ -200,7 +200,7 @@ for exp_type in ['FS', 'PYR', 'SOM']:
         ax = plt.subplot(1, 2, i + 1)
         plt.title(k)
         for cr, shift in zip(crrs, shifts):
-            do_spot_scatter_plot(cr, shift, 'k', 0.4, True)
+            do_spot_scatter_plot(cr, shift, 'k', 0.5, True)
         #do_box_plot(crrs, shifts, 'k', np.ones_like(shifts) * 0.5)
         if i == 0:
             plt.ylabel('mean r^2 of responders')
@@ -208,7 +208,8 @@ for exp_type in ['FS', 'PYR', 'SOM']:
         adjuster = np.array([-0.5, 0.5])
         ax.set_ylim(-0.05, 1)
         ax.set_xlim(np.array([shifts.min(), shifts.max()]) + adjuster)
-
+    plt.subplots_adjust(left=0.03, bottom=0.05, right=0.97, top=0.95,
+                       wspace=0.23, hspace=0.1)
     fig4.savefig(fig_path + 'shift_max.eps')
     fig4.savefig(fig_path + 'shift_max.png')
     plt.close(fig4)

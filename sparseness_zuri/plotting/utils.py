@@ -16,9 +16,9 @@ def do_box_plot(data, xval, c, widths=[1]):
 def do_spot_scatter_plot(data, xval, c='k', width=0.2, text=True):
     plt.hold(True)
     dd = data[data != 0]
-    r = width / 2
+    r = width / 2.
     for d in data:
-        plt.scatter(xval + np.random.randn(1) * r, d, c=c, marker='x')
+        plt.scatter(xval + (np.random.rand(1) - 0.5) * r, d, c=c, marker='x')
     if len(data) > 0:
         # fishers z transform for mean and then transform back
         mn = np.tanh(np.arctanh(data).mean())
@@ -33,7 +33,7 @@ def plot_mean_std(xs, mn, std, title, plt_num=[1, 1, 1], legend=True,
                   clr2='0.9', label='Trial Mean', line='-'):
     """plot the mean +/- std as timeline """
     if xs  is None:
-        xs = range(len(ys))
+        xs = range(len(mn))
     ax = plt.subplot(plt_num[0], plt_num[1], plt_num[2])
     plt.hold(True)
     plt.fill_between(xs, mn - std, mn + std, facecolor=clr2)

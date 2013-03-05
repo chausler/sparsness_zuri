@@ -268,7 +268,7 @@ def load_EphysData(exp_type='SOM', filt=0.1):
         psth_w_shift = []
         psth_s_shift = []
         #shifts = np.arange(-15, 16, 5).tolist()
-        shifts = range(-10, 1)
+        shifts = range(-15, 1)
 #        shifts = np.array(list(set(shifts)))
 #        shifts.sort()
 

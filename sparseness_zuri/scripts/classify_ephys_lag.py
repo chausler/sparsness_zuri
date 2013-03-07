@@ -368,10 +368,11 @@ def do_lag_classification(exp_type='SOM', combs=['Frequency', 'Luminance', 'Cont
     dat_file = dat_path + '/preds.pkl'
     cell_results = {}
     if os.path.exists(dat_file):
-        print ' already exists. loading %s' % exp_type
+        print ' already exists. loading %s' % dat_file
         with open(dat_file, 'rb') as infile:
             cell_results = pickle.load(infile)
     else:
+        print '%s doesnt exist, starting New' % dat_file
         if not os.path.exists(dat_path):
             os.makedirs(dat_path)
 

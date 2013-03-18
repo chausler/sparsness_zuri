@@ -11,7 +11,8 @@ import numpy.fft as fft
 import startup
 from scipy.stats import pearsonr, spearmanr
 from plotting.utils import adjust_spines, do_box_plot
-from data_utils.load_ephys import load_EphysData, load_parsed_movie_dat
+from data_utils.load_ephys import load_EphysData
+from data_utils.movie import load_parsed_movie_dat
 #from sklearn.linear_model import LinearRegression as clf
 #from sklearn.linear_model import Ridge as clf
 #from sklearn.linear_model import Lasso as clf
@@ -395,8 +396,8 @@ def do_classification(exp_type='SOM',
                       targets=['Center', 'Surround', 'Whole'],                      
                        four_downsample=None, max_exp=None):
     # Sub directory of the figure path to put the plots in
-    fig_path = startup.fig_path + 'ephys/%s/pred/' % (exp_type)
-    mov_path = startup.data_path + 'ephys/%s/' % (exp_type)
+    fig_path = startup.fig_path + 'Sparseness/%s/pred/' % (exp_type)
+    mov_path = startup.data_path + 'Sparseness/%s/' % (exp_type)
     if not os.path.exists(fig_path):
         os.makedirs(fig_path)
     if not os.path.exists(fig_path + str(downsample)):

@@ -13,7 +13,8 @@ def do_box_plot(data, xval, c, widths=[1]):
         plt.setp(box['caps'], color=c)
 
 
-def do_spot_scatter_plot(data, xval, c='k', width=0.2, text=True):
+def do_spot_scatter_plot(data, xval, c='k', width=0.2, text=True,
+                         mean_adjust=True):
     plt.hold(True)
     dd = data[data != 0]
     r = width / 2.
@@ -21,8 +22,11 @@ def do_spot_scatter_plot(data, xval, c='k', width=0.2, text=True):
         plt.scatter(xval + (np.random.rand(1) - 0.5) * r, d, c=c, marker='x')
     if len(data) > 0:
         # fishers z transform for mean and then transform back
-        mn = np.tanh(np.arctanh(data).mean())
-        plt.plot([xval - r, xval + r], [mn, mn], 'r', lw=3)
+        if mean_adjust:
+            mn = np.tanh(np.arctanh(data).mean())
+        else:
+            mn = data.mean()
+        plt.plot([xval - r, xval + r], [mn, mn], 'k', lw=3)
     plt.grid(True, axis='y')
     if text:
         plt.text(xval - r, 0.9, '#%d' % len(dd))

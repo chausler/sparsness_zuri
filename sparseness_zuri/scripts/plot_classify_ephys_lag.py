@@ -7,14 +7,14 @@ import numpy as np
 randomise = None
 filt = 0.1
 for exp_type in ['FS', 'PYR', 'SOM']:
-    fig_path = startup.fig_path + 'ephys/%s/pred/' % (exp_type)
-    dat_path = startup.data_path + 'ephys/%s/pred/' % (exp_type)
+    fig_path = startup.fig_path + 'Sparseness/%s/pred/' % (exp_type)
+    dat_path = startup.data_path + 'Sparseness/%s/pred/' % (exp_type)
     if randomise is not None:
         dat_path = dat_path + randomise + '_' + str(filt)
         fig_path = fig_path + randomise + '_' + str(filt)
     else:
         dat_path = dat_path + str(filt)
-        fig_path = fig_path + str(filt)
+        fig_path = fig_path
 
     dat_file = dat_path + '/preds.pkl'
     with open(dat_file, 'rb') as infile:
@@ -49,6 +49,7 @@ for exp_type in ['FS', 'PYR', 'SOM']:
     axs = []
     crr_sum = {}
     for aa, k in enumerate(sorted(dat.keys())):
+        print k
         for bb, cmb in enumerate(sorted(dat[k].keys())):
             cnt = (aa * b) + bb + 1 
             print k, cmb, cnt
@@ -107,10 +108,10 @@ for exp_type in ['FS', 'PYR', 'SOM']:
     plt.subplots_adjust(left=0.03, bottom=0.05, right=0.97, top=0.95,
                        wspace=0.23, hspace=0.1)
 
-    fig1.savefig(fig_path + 'shift.eps')
-    fig1.savefig(fig_path + 'shift.png')
-    fig2.savefig(fig_path + 'shift_count.eps')
-    fig2.savefig(fig_path + 'shift_count.png')
+    fig1.savefig(fig_path + '%.2f_%s_shift.eps' % (filt, exp_type))
+    fig1.savefig(fig_path + '%.2f_%s_shift.png' % (filt, exp_type))
+    fig2.savefig(fig_path + '%.2f_%s_shift_count.eps' % (filt, exp_type))
+    fig2.savefig(fig_path + '%.2f_%s_shift_count.png' % (filt, exp_type))
 
     plt.close(fig1)
     plt.close(fig2)
@@ -161,8 +162,8 @@ for exp_type in ['FS', 'PYR', 'SOM']:
 #    for ax in crr_axs:
 #        ax.set_ylim(crr_lims + adjuster * 0.05)
 #        ax.set_xlim(np.array([shifts.min(), shifts.max()]) + adjuster)
-    fig3.savefig(fig_path + 'shift_avg_count.eps')
-    fig3.savefig(fig_path + 'shift_avg_count.png')
+    fig3.savefig(fig_path + '%.2f_%s_shift_avg_count.eps' % (filt, exp_type))
+    fig3.savefig(fig_path + '%.2f_%s_shift_avg_count.png' % (filt, exp_type))
     plt.close(fig3)
 
     shift_max = {}
@@ -210,8 +211,8 @@ for exp_type in ['FS', 'PYR', 'SOM']:
         ax.set_xlim(np.array([shifts.min(), shifts.max()]) + adjuster)
     plt.subplots_adjust(left=0.03, bottom=0.05, right=0.97, top=0.95,
                        wspace=0.23, hspace=0.1)
-    fig4.savefig(fig_path + 'shift_max.eps')
-    fig4.savefig(fig_path + 'shift_max.png')
+    fig4.savefig(fig_path + '%.2f_%s_shift_max.eps' % (filt, exp_type))
+    fig4.savefig(fig_path + '%.2f_%s_shift_max.png' % (filt, exp_type))
     plt.close(fig4)
 
 

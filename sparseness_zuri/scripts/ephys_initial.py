@@ -4,7 +4,7 @@ from startup import *
 import numpy as np
 import scipy.stats
 import pylab as plt
-from plotting.utils import adjust_spines, do_box_plot
+from plotting.utils import adjust_spines, do_box_plot, do_spot_scatter_plot
 from data_utils.load_ephys import load_EphysData
 import os
 from data_utils.utils import do_thresh_corr, corr_trial_to_mean
@@ -20,9 +20,21 @@ headers = ['CellId', 'XCorr Center', 'XCorr Whole', 'XCorr Center',
                        'XCorr C v W', 'XCorr C v S', 'XCorr S v W']
 filters = [0.1]
 norm = True
-for exp_type in exp_types:
-    for filt in filters:
-        for randomise in [None, 'generated', 'random']:
+for randomise in [None, 'generated', 'random']:
+    for exp_type in exp_types:
+        for filt in filters:
+            if randomise is None:
+                f_path = fig_path + 'Sparseness/%s/initial/%.2f/' % (exp_type, filt)
+            elif randomise == 'random':
+                f_path = fig_path + 'Sparseness/%s/initial/%.2f_random/' % (
+                                                            exp_type, filt)
+            elif randomise == 'generated':
+                f_path = fig_path + 'Sparseness/%s/initial/%.2f_generated/' % (
+                                                                exp_type, filt)
+            fname = '%s%s' % (f_path, 'initial_summary.png')
+            if os.path.exists(fname):
+                print fname + ' exist, SKIPPING'
+                continue
             dat = load_EphysData(exp_type, filt=filt)
             csv_vals = []
             cellids = []
@@ -31,40 +43,47 @@ for exp_type in exp_types:
                 d = dat[k]
                 print 'doing ', d['cellid']
                 if randomise is None:
-                    f_path = fig_path + 'ephys/%s/initial/%.2f/' % (exp_type, filt)
                     psth_s = d['psth_s']
                     psth_c = d['psth_c']
                     psth_w = d['psth_w']
                 elif randomise == 'random':
-                    f_path = fig_path + 'ephys/%s/initial/%.2f_random/' % (exp_type, filt)
                     psth_c = d['psth_c_rand']
                     psth_s = d['psth_s_rand']
                     psth_w = d['psth_w_rand']
                 elif randomise == 'generated':
-                    f_path = fig_path + 'ephys/%s/initial/%.2f_generated/' % (exp_type, filt)
                     psth_c = d['psth_c_gen']
                     psth_s = d['psth_s_gen']
                     psth_w = d['psth_w_gen']
+
                 if not os.path.exists(f_path):
                     os.makedirs(f_path)
+
                 edge = d['edge']
                 mn_c = psth_c.mean(0)
                 std_c = np.std(psth_c, 0)
                 xcorr_c = corr_trial_to_mean(psth_c, mn_c)
+                avg_c = d['psth_c_raw'].ravel().mean()
                 vals.append(xcorr_c)
                 mn_w = psth_w.mean(0)
                 std_w = np.std(psth_w, 0)
                 xcorr_w = corr_trial_to_mean(psth_w, mn_w)
+                avg_w = d['psth_w_raw'].ravel().mean()
                 vals.append(xcorr_w)
                 mx = np.maximum(mn_c.max(), mn_w.max())
                 if psth_s is not None:
                     mn_s = psth_s.mean(0)
                     std_s = np.std(psth_s, 0)
                     xcorr_s = corr_trial_to_mean(psth_s, mn_s)
+                    avg_s = d['psth_s_raw'].ravel().mean()
                     vals.append(xcorr_s)
                     mx = np.maximum(mx, mn_s.max())
                 else:
                     vals.append(0)
+                    avg_s = 0
+
+                vals.append(avg_c)
+                vals.append(avg_w)
+                vals.append(avg_s)
                 if norm:
                     mn_c = mn_c / mx
                     std_c = std_c / mx
@@ -121,9 +140,7 @@ for exp_type in exp_types:
                 hst_ax1 = plt.subplot(534)
                 cnts, _, _ = plt.hist(mn_c.ravel(), bins)
                 y = plt.ylim()[1]
-                avg = mn_c.ravel().mean()
-                vals.append(avg)
-                plt.text(0.7, y * 0.9, 'Avg Act: %.2f' % avg)
+                plt.text(0.7, y * 0.9, 'Avg Act: %.2f' % avg_c)
                 hist_mx = np.maximum(cnts.max(), hist_mx)
                 plt.xticks(tks)
                 adjust_spines(hst_ax1, ['bottom', 'left'])
@@ -131,9 +148,7 @@ for exp_type in exp_types:
                 hst_ax2 = plt.subplot(535)
                 cnts, _, _ = plt.hist(mn_w.ravel(), bins)
                 y = plt.ylim()[1]
-                avg = mn_w.ravel().mean()
-                vals.append(avg)
-                plt.text(0.7, y * 0.9, 'Avg Act: %.2f' % avg)
+                plt.text(0.7, y * 0.9, 'Avg Act: %.2f' % avg_w)
                 hist_mx = np.maximum(cnts.max(), hist_mx)
                 plt.xticks(tks)
                 plt.title('Mean Activation Histogram')
@@ -143,15 +158,11 @@ for exp_type in exp_types:
                     ax = plt.subplot(536)
                     cnts, _, _ = plt.hist(mn_s.ravel(), bins)
                     y = plt.ylim()[1]
-                    avg = mn_s.ravel().mean()
-                    vals.append(avg)
-                    plt.text(0.7, y * 0.9, 'Avg Act: %.2f' % avg)
+                    plt.text(0.7, y * 0.9, 'Avg Act: %.2f' % avg_s)
                     hist_mx = np.maximum(cnts.max(), hist_mx)
                     plt.xticks(tks)
                     adjust_spines(ax, ['bottom', 'left'])
                     ax.set_ylim(0, hist_mx)
-                else:
-                    vals.append(0)
 
                 hst_ax1.set_ylim(0, hist_mx)
                 hst_ax2.set_ylim(0, hist_mx)
@@ -279,7 +290,6 @@ for exp_type in exp_types:
                 csv_vals.append(vals)
                 cellids.append(d['cellid'])
 
-
             csv_vals = np.array(csv_vals)
             fig = plt.figure()
             ax = plt.subplot(111)
@@ -293,30 +303,33 @@ for exp_type in exp_types:
                 if (i % divider == 0):
                     offset += 2
                     plt.text(offset, 1, groups[i / divider])
-                if csv_vals[:, i].sum() > 0:
-                    do_box_plot(csv_vals[:, i], np.array([offset]), col,
-                                widths=[0.7])
 
-                    inds = np.arange(divider)
-                    inds = inds[inds != i % divider]
-                    base_ind = i / divider
-                    p_offset = -0.2
+#                    do_box_plot(csv_vals[:, i], np.array([offset]), col,
+#                                widths=[0.7])
+                mean_adjust = False if i / divider == 1 else True
+                do_spot_scatter_plot(csv_vals[:, i], offset, col,
+                            width=0.7, mean_adjust=mean_adjust)
+                inds = np.arange(divider)
+                inds = inds[inds != i % divider]
+                base_ind = (i / divider) * divider
+                p_offset = -0.2
+                if csv_vals[:, i].sum() > 0:
                     for ind in inds:
                         if csv_vals[:, base_ind + ind].sum() == 0:
                             continue
                         stat, p = scipy.stats.ttest_ind(csv_vals[:, i],
-                                                    csv_vals[:, base_ind + ind])
+                                                csv_vals[:, base_ind + ind])
                         if p < 0.05:
                             plt.scatter(offset + p_offset, 0.95, c=colors[ind],
                                         edgecolor=colors[ind],
                                         marker='*')
                             p_offset *= -1
-                    xvals.append(offset)
-                    xlbls.append(headers[i + 1])
+                xvals.append(offset)
+                xlbls.append(headers[i + 1])
                 offset += 1
             plt.xticks(xvals, xlbls, rotation='vertical')
             plt.xlim(0, offset)
-            plt.ylim(0, 1.05)
+            plt.ylim(0, 1.15)
             plt.subplots_adjust(left=0.05, bottom=0.21, right=0.98, top=0.98,
                        wspace=0.3, hspace=0.34)
 

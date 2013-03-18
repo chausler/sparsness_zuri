@@ -369,12 +369,12 @@ def get_masked_data(data, maskSizePixel, maskLocationPixel, parts=[3, 3]):
 
 if __name__ == "__main__":
 
-    exp_type = 'SOM'
+    exp_type = 'POP'
     failed_count = 0
     success_count = 0
     ephys = load_EphysData(exp_type)
-    dat_path = startup.data_path + 'ephys/%s/' % exp_type
-    fig_path = startup.fig_path + 'ephys/%s/movies/' % exp_type
+    dat_path = startup.data_path + 'Sparseness/%s/' % exp_type
+    fig_path = startup.fig_path + 'Sparseness/%s/movies/' % exp_type
 
     if not os.path.exists(fig_path):
         os.makedirs(fig_path)

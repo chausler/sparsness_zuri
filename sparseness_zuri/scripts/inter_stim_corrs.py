@@ -11,7 +11,7 @@ import os
 corr_type = 'spearmanr'
 corr_type = 'pearsonr'
 colors = ['r', 'g', 'b']
-#fig_path = fig_path + 'ephys/%s/initial/' % (exp_type)
+#fig_path = fig_path + 'Sparseness/%s/initial/' % (exp_type)
 if not os.path.exists(fig_path):
     os.makedirs(fig_path)
 

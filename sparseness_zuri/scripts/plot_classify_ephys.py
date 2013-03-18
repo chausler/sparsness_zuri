@@ -53,32 +53,37 @@ def plot_summary(cmb_corrs, fig_path, extras=''):
     colors = ['r', 'b', 'g', 'y', 'c', 'm']
     _ = plt.subplot(111)
     xaxis = []
+    xvals = []
     boxes = []
     lbls = []
 
     #targets.append('Overall')
-    for i, cmb in enumerate(sorted(cmb_corrs.keys())):
-        xaxis.append(cmb)
-        offset = 0
-        for j, k in enumerate(sorted(cmb_corrs[cmb].keys())):
-            dat = cmb_corrs[cmb][k]
+    offset = -1
+    for i, k in enumerate(sorted(cmb_corrs.keys())):
+        offset += 2
+        min_x = offset
+        for j, cmb in enumerate(sorted(cmb_corrs[k].keys())):
+            xaxis.append(cmb)
+            xvals.append(offset)
+            dat = cmb_corrs[k][cmb]
             if len(dat) == 0:
                 continue
-            col = colors[j]
-            do_box_plot(np.array(dat), np.array([i + offset]),
-                        col, widths=[0.2])
-            #do_spot_scatter_plot(np.array(dat), np.array([i + offset]), col)
-            offset += 0.3
-            if i == 0:
-                boxes.append(plt.Rectangle((0, 0), 1, 1, fc=col))
-                lbls.append(k)
-                if j == 0:
-                    plt.title('N=%d' % len(dat))
+            col = colors[i]
+#            do_box_plot(np.array(dat), np.array([i + offset]),
+#                        col, widths=[0.2])
+            do_spot_scatter_plot(np.array(dat), offset, col)
+            offset += 1
+#            if j == 0:
+#                boxes.append(plt.Rectangle((0, 0), 1, 1, fc=col))
+#                lbls.append(k)
+        max_x = offset
+        plt.text(min_x + (max_x - min_x) / 2., 1., k, ha='center')
+    plt.title('N=%d' % len(dat))
 
-    plt.xticks(range(len(xaxis)), xaxis, rotation='vertical')
-    plt.xlim(-1, len(xaxis) + 1)
+    plt.xticks(xvals, xaxis, rotation='vertical')
     plt.plot([-1, len(xaxis) + 1], [0, 0], '--')
-    plt.ylim(0, 1)
+    plt.xlim(0, offset)
+    plt.ylim(-0.05, 1)
     plt.subplots_adjust(left=0.05, bottom=0.5, right=0.97, top=0.95,
                        wspace=0.3, hspace=0.34)
     plt.legend(boxes, lbls, frameon=False, loc=4)
@@ -259,13 +264,13 @@ def plot_prediction(pred, actual, title, plt_num=[1, 1, 1], legend=True):
     adjust_spines(ax, ['bottom', 'left'])
     plt.title(title)
 
-
+filt_list = [-9, -4]
 filt = 0.1
 randomisers = [None, 'generated', 'random']
 for randomise in randomisers:
     for exp_type in ['FS', 'PYR', 'SOM']:
-        fig_path = startup.fig_path + 'ephys/%s/pred/' % (exp_type)
-        dat_path = startup.data_path + 'ephys/%s/pred/' % (exp_type)
+        fig_path = startup.fig_path + 'Sparseness/%s/pred/' % (exp_type)
+        dat_path = startup.data_path + 'Sparseness/%s/pred/' % (exp_type)
         if randomise is not None:
             dat_path = dat_path + randomise + '_' + str(filt)
             fig_path = fig_path + randomise + '_' + str(filt)
@@ -289,7 +294,10 @@ for randomise in randomisers:
             if os.path.exists('%ssummary_pred_%s.png' % (fname, s)):
                 print '%ssummary_%s.png exists, SKIPPING' % (fname, s)
                 continue
-
+            print len(filt_list), s, (s in filt_list)
+            if len(filt_list) > 0 and s not in filt_list:
+                print '%ssummary_%s.png not in filter, SKIPPING' % (fname, s)
+                continue
             if s not in dat:
                 dat[str(s)] = {}
 
@@ -317,9 +325,7 @@ for randomise in randomisers:
                 fname = '%s/%s/%s/' % (fig_path, s, cell)
                 if not os.path.exists(fname):
                     os.makedirs(fname)
-                for cmb in dat[s][cell]:
-                    if cmb not in cmb_dat:
-                        cmb_dat[cmb] = {}
+                for cmb in dat[s][cell]:                    
                     print fname, cmb
                     if 'Fourier' in cmb:
                         plot_preds_fourier(cell, dat[s][cell][cmb],
@@ -330,9 +336,11 @@ for randomise in randomisers:
 
                     for k in dat[s][cell][cmb]:
                         val = [dat[s][cell][cmb][k]['crr_pred']]
-                        if k in cmb_dat[cmb]:
-                            cmb_dat[cmb][k] += val
+                        if k not in cmb_dat:
+                            cmb_dat[k] = {}
+                        if cmb in cmb_dat[k]:
+                            cmb_dat[k][cmb] += val
                         else:
-                            cmb_dat[cmb][k] = val
-            fname = '%s/' % (fig_path)
+                            cmb_dat[k][cmb] = val
+            fname = '%s/%s_' % (fig_path, exp_type)
             plot_summary(cmb_dat, fname, s)

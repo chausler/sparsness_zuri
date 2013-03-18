@@ -13,12 +13,13 @@ from collections import deque
 from scipy.stats import pearsonr, spearmanr, kendalltau
 from plotting.utils import adjust_spines, do_box_plot
 from data_utils.utils import gauss_filter
-from data_utils.load_ephys import load_EphysData, load_parsed_movie_dat
+from data_utils.load_ephys import load_EphysData
 #from sklearn.linear_model import LinearRegression as clf
 #from sklearn.linear_model import Ridge as clf
 from sklearn.linear_model import Lasso as clf
 from sklearn.linear_model import LassoCV
 from sklearn.cross_validation import KFold, LeaveOneOut
+from data_utils.movie import load_parsed_movie_dat
 #from sklearn.linear_model import SGDRegressor as clf
 import itertools
 import os
@@ -514,8 +515,8 @@ def do_classification(exp_type='SOM', combs=['Luminance', 'Contrast',
                                ['Surround', 'Whole']],
                        four_downsample=None,  random=False):
     # Sub directory of the figure path to put the plots in
-    fig_path = startup.fig_path + 'ephys/%s/xcorr/' % (exp_type)
-    mov_path = startup.data_path + 'ephys/%s/' % (exp_type)
+    fig_path = startup.fig_path + 'Sparseness/%s/xcorr/' % (exp_type)
+    mov_path = startup.data_path + 'Sparseness/%s/' % (exp_type)
     if random is not None:
         if not os.path.exists(fig_path + str(four_downsample) + '_%s' % random):
             os.makedirs(fig_path + str(four_downsample) + '_%s' % random)

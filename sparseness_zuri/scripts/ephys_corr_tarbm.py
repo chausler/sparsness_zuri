@@ -42,7 +42,7 @@ for exp_type in patches.keys():
                             patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]  = {}
                         if 'cell_crr' in patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]:
                             print 'skipping ', cell
-                            #continue
+                            continue
                         crr = corr_trial_to_mean(dt, cell_dat)
                         crr_mn = do_thresh_corr(dt.mean(0), cell_dat)
                         cell_crr = corr_trial_to_trial(dt)

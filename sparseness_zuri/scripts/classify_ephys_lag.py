@@ -465,7 +465,7 @@ if __name__ == "__main__":
                 print 'DOWNSAMPLE %s' % (str(downsample))
                 corrs.append(do_lag_classification(exp_type=exp_type, min_comb=None,
                                             max_comb=None,
-                                            targets=[['Center', 'Whole'],
+                                            targets=[['Center', 'Center'],
                                                      ['Whole', 'Center']
                                                      #['Surround', 'Whole']
                                                      ],

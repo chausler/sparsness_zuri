@@ -265,9 +265,9 @@ def load_EphysData(exp_type='SOM', filt=0.1):
             psth_s = np.array(dt[9], dtype=np.int)
 
         # do shift
-        psth_c_shift = []
-        psth_w_shift = []
-        psth_s_shift = []
+        psth_c_shift = {}
+        psth_w_shift = {}
+        psth_s_shift = {}
         #shifts = np.arange(-15, 16, 5).tolist()
         shifts = range(-15, 1)
 #        shifts = np.array(list(set(shifts)))
@@ -277,15 +277,15 @@ def load_EphysData(exp_type='SOM', filt=0.1):
             idx = deque(np.arange(psth_c.shape[1]))
             idx.rotate(shift)
             c, _ = filter(psth_c[:, idx], bin_freq, prm=filt)
-            psth_c_shift.append(c)
+            psth_c_shift[shift] = c
             w, _ = filter(psth_w[:, idx], bin_freq, prm=filt)
-            psth_w_shift.append(w)
+            psth_w_shift[shift] = 2
             if psth_s is not None:
                 s, _ = filter(psth_s[:, idx], bin_freq, prm=filt)
-                psth_s_shift.append(s)
-        psth_c_shift = np.array(psth_c_shift)
-        psth_w_shift = np.array(psth_w_shift)
-        psth_s_shift = np.array(psth_s_shift)
+                psth_s_shift[shift] = s
+#        psth_c_shift = np.array(psth_c_shift)
+#        psth_w_shift = np.array(psth_w_shift)
+#        psth_s_shift = np.array(psth_s_shift)
 
         idx = deque(np.arange(psth_c.shape[1]))
         idx.rotate(-4)

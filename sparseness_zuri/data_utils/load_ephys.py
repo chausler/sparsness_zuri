@@ -283,7 +283,7 @@ def load_EphysData(exp_type='SOM', filt=0.1):
             if psth_s is not None:
                 s, _ = filter(psth_s[:, idx], bin_freq, prm=filt)
                 psth_s_shift[shift] = s
-#        psth_c_shift = np.array(psth_c_shift)
+#        psth_c_shift = np.array(psth_c_shift) 
 #        psth_w_shift = np.array(psth_w_shift)
 #        psth_s_shift = np.array(psth_s_shift)
 

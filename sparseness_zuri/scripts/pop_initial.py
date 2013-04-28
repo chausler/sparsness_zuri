@@ -15,9 +15,9 @@ from data_utils.utils import do_thresh_corr, corr_trial_to_mean
 exp_type = 'POP'
 groups = ['R^2: Trial to Mean', 'Avg Activation', 'R^2: Trial Types']
 colors = ['r', 'b', 'g', 'y', 'c', 'm']
-headers = ['CellId', 'XCorr Center', 'XCorr Whole', 'XCorr Center',
-                       'Avg Center', 'Avg Whole', 'Avg Surround',
-                       'XCorr C v W', 'XCorr C v S', 'XCorr S v W']
+headers = ['CellId', 'XCorr Center', 'XCorr Whole',
+                       'Avg Center', 'Avg Whole',
+                       'XCorr C v W']
 
 norm = True
 for randomise in [None]:
@@ -29,13 +29,14 @@ for randomise in [None]:
     fname = '%s%s' % (f_path, 'initial_summary.png')
     if os.path.exists(fname):
         print fname + ' exist, SKIPPING'
-        continue
+#        continue
     exps = list_PopExps()
 
     csv_vals = []
     cellids = []
+    #exps = ['121127']
     for exp_id in exps:
-        dat = load_PopData(exp_id)
+        dat = load_PopData(exp_id, True)
         vals = []
         print 'doing ', exp_id
         if randomise is None:
@@ -51,25 +52,26 @@ for randomise in [None]:
 
         mn_c = dat_c.mean(2).mean(0)
         std_c = np.std(dat_c, 2).mean(0)
-        xcorr_c = 0# corr_trial_to_mean(dat_c, mn_c)
-        avg_c = dat_c.ravel().mean()
+        print 'FIXME'
+        xcorr_c = 0  # corr_trial_to_mean(dat_c, mn_c)
+
         vals.append(xcorr_c)
 
         mn_w = dat_w.mean(2).mean(0)
         std_w = np.std(dat_w, 2).mean(0)
-        xcorr_w = 0# corr_trial_to_mean(dat_w, mn_w)
-        avg_w = dat_w.mean()
+        xcorr_w = 0  # corr_trial_to_mean(dat_w, mn_w)
+
         vals.append(xcorr_w)
         mx = np.maximum(mn_c.max(), mn_w.max())
 
+        mn_c = mn_c / mx
+        std_c = std_c / mx
+        mn_w = mn_w / mx
+        std_w = std_w / mx
+        avg_c = mn_c.mean()
+        avg_w = mn_w.mean()
         vals.append(avg_c)
         vals.append(avg_w)
-
-        if norm:
-            mn_c = mn_c / mx
-            std_c = std_c / mx
-            mn_w = mn_w / mx
-            std_w = std_w / mx
 
         fig = plt.figure(figsize=(18, 12))
         fig.set_facecolor('white')
@@ -84,7 +86,9 @@ for randomise in [None]:
                  label='Center', linewidth=2)
         plt.legend(bbox_to_anchor=(0.55, 0.95, 0.4, 0.1),
                    frameon=False, ncol=2)
-        plt.text(1, plt.ylim()[1], 'corr trl v avg: %.2f' % (xcorr_c))
+        plt.text(5, plt.ylim()[1] * 0.9,
+                 'corr trl-trl: %.2f,  #cells: : %d,  #trials: %d' %
+                 (xcorr_c, dat_c.shape[0], dat_c.shape[2]))
         adjust_spines(ax, ['bottom', 'left'])
 
         ax = plt.subplot(422)
@@ -95,7 +99,9 @@ for randomise in [None]:
                  label='Whole Field', linewidth=2)
         plt.legend(bbox_to_anchor=(0.55, 0.95, 0.4, 0.1),
                    frameon=False, ncol=2)
-        plt.text(1, plt.ylim()[1], 'corr trl v avg: %.2f' % (xcorr_w))
+        plt.text(5, plt.ylim()[1] * 0.9,
+                 'corr trl-trl: %.2f,  #cells: : %d,  #trials: %d' %
+                 (xcorr_w, dat_w.shape[0], dat_w.shape[2]))
         adjust_spines(ax, ['bottom', 'left'])
         plt.title('Mean & STD')
 
@@ -175,24 +181,24 @@ for randomise in [None]:
     xvals = []
     xlbls = []
     offset = -1
-    divider = 3
+    divider = 2
     for i in range(csv_vals.shape[1]):
         col = colors[i % divider]
+        base_ind = (i / divider) * divider
         if (i % divider == 0):
             offset += 2
-            plt.text(offset, 1, groups[i / divider])
+            plt.text(offset - 0.5, 1, groups[i / divider])
 
-#                    do_box_plot(csv_vals[:, i], np.array([offset]), col,
-#                                widths=[0.7])
         mean_adjust = False if i / divider == 1 else True
         do_spot_scatter_plot(csv_vals[:, i], offset, col,
                     width=0.7, mean_adjust=mean_adjust)
         inds = np.arange(divider)
         inds = inds[inds != i % divider]
-        base_ind = (i / divider) * divider
         p_offset = -0.2
         if csv_vals[:, i].sum() > 0:
             for ind in inds:
+                if (base_ind + ind) >= csv_vals.shape[1]:
+                        continue
                 if csv_vals[:, base_ind + ind].sum() == 0:
                     continue
                 stat, p = scipy.stats.ttest_ind(csv_vals[:, i],
@@ -206,7 +212,7 @@ for randomise in [None]:
         xlbls.append(headers[i + 1])
         offset += 1
     plt.xticks(xvals, xlbls, rotation='vertical')
-    plt.xlim(0, offset)
+    plt.xlim(0, offset + 0.5)
     plt.ylim(0, 1.15)
     plt.subplots_adjust(left=0.05, bottom=0.21, right=0.98, top=0.98,
                wspace=0.3, hspace=0.34)

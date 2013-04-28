@@ -13,7 +13,9 @@ import startup
 import os
 from plotting.utils import adjust_spines
 from data_utils.load_ephys import load_EphysData
-
+from data_utils.load_pop import load_PopData, list_PopExps, scan_freq
+from data_utils.utils import downsample, downsample_multi_dim
+frame_rate = 30.
 
 def ellipse(width, height):
 
@@ -217,20 +219,21 @@ def plot_movie(lum, con, flow, four, movie, fname):
         else:
             adjust_spines(ax, [])
 
-        ax = plt.subplot(3, 6, 15 + i, polar=True)
-        plt.plot([0, flow[0, i, 0]], [0, flow[0, i, 1]], '-o', color='0.3',
-                 linewidth=2)
-        plt.ylim(0, flow[0, :, 1].max())
-        for _, spine in ax.spines.iteritems():
-                spine.set_color('none')  # don't draw spine
-        #plt.adjust_spines(ax,[])
-        if i != 0:
-            plt.gca().set_yticklabels([])
-            plt.gca().set_xticklabels([])
-        else:
-            plt.title('Flow')
-        plt.xticks([0, np.pi / 2, np.pi, np.pi * 3. / 2])
-        plt.yticks(np.linspace(0, flow[0, :, 1].max(), 4).astype(np.int))
+        if len(flow) > 0:
+            ax = plt.subplot(3, 6, 15 + i, polar=True)
+            plt.plot([0, flow[0, i, 0]], [0, flow[0, i, 1]], '-o', color='0.3',
+                     linewidth=2)
+            plt.ylim(0, flow[0, :, 1].max())
+            for _, spine in ax.spines.iteritems():
+                    spine.set_color('none')  # don't draw spine
+            #plt.adjust_spines(ax,[])
+            if i != 0:
+                plt.gca().set_yticklabels([])
+                plt.gca().set_xticklabels([])
+            else:
+                plt.title('Flow')
+            plt.xticks([0, np.pi / 2, np.pi, np.pi * 3. / 2])
+            plt.yticks(np.linspace(0, flow[0, :, 1].max(), 4).astype(np.int))
 
     plt.subplots_adjust(left=0.04, bottom=0.06, right=0.96, top=0.95,
                          wspace=0.20, hspace=0.35)
@@ -286,19 +289,19 @@ def plot_surround(lum, con, flow, four, movie, fname):
             #plt.colorbar()
         else:
             adjust_spines(ax, [])
-
-        ax = plt.subplot(5, parts, 4 * parts + (s + 1), polar=True)
-        plt.plot([0, flow[s, frame, 0]], [0, flow[s, frame, 1]], '-o',
-                 color='0.3', linewidth=2)
-        for _, spine in ax.spines.iteritems():
-                spine.set_color('none')  # don't draw spine
-        if s != 0:
-            plt.gca().set_yticklabels([])
-            plt.gca().set_xticklabels([])
-        else:
-            plt.title('Flow')
-        plt.xticks([0, np.pi / 2, np.pi, np.pi * 3. / 2])
-        plt.yticks(np.linspace(0, flow[s, frame, 1].max(), 4).astype(np.int))
+        if len(flow) > 0:
+            ax = plt.subplot(5, parts, 4 * parts + (s + 1), polar=True)
+            plt.plot([0, flow[s, frame, 0]], [0, flow[s, frame, 1]], '-o',
+                     color='0.3', linewidth=2)
+            for _, spine in ax.spines.iteritems():
+                    spine.set_color('none')  # don't draw spine
+            if s != 0:
+                plt.gca().set_yticklabels([])
+                plt.gca().set_xticklabels([])
+            else:
+                plt.title('Flow')
+            plt.xticks([0, np.pi / 2, np.pi, np.pi * 3. / 2])
+            plt.yticks(np.linspace(0, flow[s, frame, 1].max(), 4).astype(np.int))
 
     plt.subplots_adjust(left=0.04, bottom=0.06, right=0.96, top=0.95,
                          wspace=0.50, hspace=0.5)
@@ -367,9 +370,7 @@ def get_masked_data(data, maskSizePixel, maskLocationPixel, parts=[3, 3]):
     return masked, split_surround
 
 
-if __name__ == "__main__":
-
-    exp_type = 'POP'
+def process_movie_ephys(exp_type='SOM'):
     failed_count = 0
     success_count = 0
     ephys = load_EphysData(exp_type)
@@ -485,4 +486,171 @@ if __name__ == "__main__":
                    fig_path + e['cellid'] + '_surround')
     print 'Failed: ', failed_count
     print 'Successful: ', success_count
+
+
+
+def process_movie_pop(exp_type='POP'):
+    failed_count = 0
+    success_count = 0
+    exps = list_PopExps()
+    dat_path = startup.data_path + 'Sparseness/%s/' % exp_type
+    fig_path = startup.fig_path + 'Sparseness/%s/movies/' % exp_type
+
+    if not os.path.exists(fig_path):
+        os.makedirs(fig_path)
+    for exp_id in exps:
+#        print 'recording ', exp_id
+        target_fname = exp_id + '_processed.npz'
+        flow_fname = exp_id + '_flow.mat'
+        e = load_PopData(exp_id)
+        if os.path.exists(dat_path + target_fname):
+        #    print 'already exists, skipping ', target_fname
+            success_count += 1
+#            continue
+        flow_found = True
+        if not os.path.exists(dat_path + flow_fname):
+            flow_found = False
+#            print 'flow data missing ', flow_fname
+#            continue
+
+        movie = scipy.io.loadmat(dat_path + e['movie'])
+        movie = movie['dat']
+
+        exp_len = e['dat_c'].shape[1] / e['scan_freq']
+        movie_len = movie.shape[0] / frame_rate
+        if exp_len > movie_len:
+            mov_frames = movie.shape[0]
+            exp_samples = np.ceil(e['scan_freq'] * movie_len)
+        else:
+            mov_frames = np.ceil(frame_rate * exp_len)
+            exp_samples = e['dat_c'].shape[1]
+
+        print
+        print 'Exp: %s,\tScan Rate: %.2f \tFrame Rate: %.2f' % (
+                            exp_id, e['scan_freq'],  frame_rate)
+        print '\t\t#Samples: %d\t\t#Frames: %d' % (e['dat_c'].shape[1],
+                                                   movie.shape[0])
+        print '\t\tExp Length: %.2fsec\tMovie Length: %.2fsec' % (exp_len,
+                                                                  movie_len)
+        print 'Selected\t#Samples: %d\t\t#Frames: %d' % (exp_samples,
+                                                         mov_frames)
+
+        movie = movie[:mov_frames]
+        if flow_found:
+            flow = scipy.io.loadmat(dat_path + flow_fname)
+            flow = flow['uv']
+            flow = np.swapaxes(flow, 1, 2)
+            flow = flow[:mov_frames]
+
+        if (np.abs(e['adjustedMovResolution']
+                   - e['movResolution'])).sum() != 0:
+            movie = movie[:, :e['adjustedMovResolution'][0],
+                      :e['adjustedMovResolution'][1]]
+            if flow_found:
+                flow = flow[:, :e['adjustedMovResolution'][0],
+                      :e['adjustedMovResolution'][1]]
+        #try:
+        masked, surround = get_masked_data(movie,
+                                    e['maskSizePixel'], e['maskLocationPixel'])
+#        except:
+#            print 'FAILED: ', e['cellid']
+#            failed_count += 1
+#            continue
+        success_count += 1
+        exp_time = np.arange(exp_samples) / scan_freq
+        mov_time = np.arange(mov_frames) / frame_rate
+
+        lum_mask = downsample(get_luminance(masked),
+                              mov_time, exp_time)[np.newaxis, :]
+        con_mask = downsample(get_contrast(masked),
+                              mov_time, exp_time)[np.newaxis, :]
+
+        four_mask, freq_mask, orient_mask = get_fourier2D(masked)
+        four_mask = downsample_multi_dim(four_mask, mov_time,
+                               exp_time)[np.newaxis, :, :, :]
+        freq_mask = downsample_multi_dim(freq_mask, mov_time,
+                               exp_time)[np.newaxis, :, :]
+        orient_mask = downsample_multi_dim(orient_mask, mov_time,
+                               exp_time)[np.newaxis, :, :]
+
+#        lum_surr = []
+#        con_surr = []
+#        four_surr = []
+#        freq_surr = []
+#        orient_surr = []
+#        for s in range(surround.shape[0]):
+#            lum_surr.append(get_luminance(surround[s]))
+#            con_surr.append(get_contrast(surround[s]))
+#            f, fr, o = get_fourier2D(surround[s])
+#            four_surr.append(f)
+#            freq_surr.append(fr)
+#            orient_surr.append(o)
+#        lum_surr = np.array(lum_surr)
+#        con_surr = np.array(con_surr)
+#        four_surr = np.array(four_surr)
+#        freq_surr = np.array(freq_surr)
+#        orient_surr = np.array(orient_surr)
+
+        lum_whole = downsample(get_luminance(movie), mov_time,
+                               exp_time)[np.newaxis, :]
+        con_whole = downsample(get_contrast(movie), mov_time,
+                               exp_time)[np.newaxis, :]
+        four_whole, freq_whole, orient_whole = get_fourier2D(movie)
+        four_whole = downsample_multi_dim(four_whole, mov_time,
+                               exp_time)[np.newaxis, :, :, :]
+        freq_whole = downsample_multi_dim(freq_whole, mov_time,
+                               exp_time)[np.newaxis, :, :]
+        orient_whole = downsample_multi_dim(orient_whole, mov_time,
+                               exp_time)[np.newaxis, :, :]
+        if flow_found:
+            flow_whole, flow_mask, flow_surr = get_flow(flow,
+                                e['maskSizePixel'], e['maskLocationPixel'])
+        else:
+            flow_whole, flow_mask, flow_surr = np.array([]), np.array([]), np.array([])
+
+        movie = movie[np.newaxis, :, :, :]
+        masked = masked[np.newaxis, :, :, :]
+        np.savez(dat_path + target_fname,
+                   lum_mask=lum_mask, con_mask=con_mask, flow_mask=flow_mask,
+                   four_mask=four_mask,
+                   freq_mask=freq_mask, orient_mask=orient_mask,
+                    masked=masked,
+                   lum_whole=lum_whole, con_whole=con_whole,
+                   flow_whole=flow_whole,
+                   four_whole=four_whole, freq_whole=freq_whole,
+                   orient_whole=orient_whole, movie=movie,
+                   mov_frames=mov_frames, exp_samples=exp_samples
+#                   lum_surr=lum_surr, con_surr=con_surr, flow_surr=flow_surr,
+#                   four_surr=four_surr, freq_surr=freq_surr,
+#                   orient_surr=orient_surr, surround=surround
+        )
+
+        scipy.io.savemat(dat_path + target_fname[:-3] + '.mat',
+            {'lum_mask': lum_mask, 'con_mask': con_mask,
+            'flow_mask': flow_mask, 'four_mask': four_mask,
+            'freq_mask': freq_mask, 'orient_mask': orient_mask,
+            'masked': masked,
+            'lum_whole': lum_whole, 'con_whole': con_whole,
+            'flow_whole': flow_whole, 'four_whole': four_whole,
+            'freq_whole': freq_whole,
+            'orient_whole': orient_whole, 'movie': movie,
+            'mov_frames': mov_frames, 'exp_samples': exp_samples
+#            'lum_surr': lum_surr, 'con_surr': con_surr, 'flow_surr': flow_surr,
+#            'four_surr': four_surr, 'freq_surr': freq_surr,
+#                   'orient_surr': orient_surr, 'surround': surround
+            })
+
+        plot_movie(lum_mask, con_mask, flow_mask, four_mask, masked,
+                   fig_path + exp_id + '_masked')
+        plot_movie(lum_whole, con_whole, flow_whole, four_whole, movie,
+                   fig_path + exp_id + '_whole')
+#        plot_surround(lum_surr, con_surr, flow_surr, four_surr, surround,
+#                   fig_path + exp_id + '_surround')
+    print 'Failed: ', failed_count
+    print 'Successful: ', success_count
+
+
+if __name__ == "__main__":
+    exp_type = 'POP'
+    process_movie_pop()
 #        animate_matrix_multi([masked, four_mask])

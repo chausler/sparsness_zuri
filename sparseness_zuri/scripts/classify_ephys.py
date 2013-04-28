@@ -90,6 +90,7 @@ def CV(clf, X, y, folds=20, clf_args={}, clf_fit_args={},
     pred = []
     try:
         pred = dview.map(classify, cv)
+        print pred
     except RemoteError as e:
         print e
         if e.engine_info:

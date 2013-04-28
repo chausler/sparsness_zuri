@@ -4,11 +4,8 @@ import Image
 
 
 def load_movie_data(cellid, exp_type='SOM'):
-    if exp_type == 'POP':
-        dat = np.load(data_path + 'POP/' + cellid + '_processed.npz',
-              'rb')
-    else:
-        dat = np.load(data_path + 'Sparseness/' + exp_type + '/' + cellid +
+    
+    dat = np.load(data_path + 'Sparseness/' + exp_type + '/' + cellid +
                       '_processed.npz', 'rb')
     return dat
 
@@ -41,17 +38,26 @@ def load_parsed_movie_dat(cellid, exp_type='SOM', four_downsample=None):
     four_mask = four_mask.reshape(four_mask.shape[0],
                            four_mask.shape[1], -1)
     #surround movie data
-    lum_surr = mov['lum_surr']
-    con_surr = mov['con_surr']
-    flow_surr = mov['flow_surr']
-    four_surr = mov['four_surr']
-    freq_surr = mov['freq_surr']
-    orient_surr = mov['orient_surr']
-    if four_downsample != None:
-        four_surr = downsample_four(four_surr, four_downsample)
-    four_surr_shape = four_surr.shape[2:]
-    four_surr = four_surr.reshape(four_surr.shape[0],
-                                  four_surr.shape[1], -1)
+    if 'lum_surr' in mov:
+        lum_surr = mov['lum_surr']
+        con_surr = mov['con_surr']
+        flow_surr = mov['flow_surr']
+        four_surr = mov['four_surr']
+        freq_surr = mov['freq_surr']
+        orient_surr = mov['orient_surr']
+        if four_downsample != None:
+            four_surr = downsample_four(four_surr, four_downsample)
+        four_surr_shape = four_surr.shape[2:]
+        four_surr = four_surr.reshape(four_surr.shape[0],
+                                      four_surr.shape[1], -1)
+    else:
+        lum_surr = None
+        con_surr = None
+        flow_surr = None
+        four_surr = None
+        freq_surr = None
+        orient_surr = None
+        four_surr_shape = None
     #whole movie data
     lum_whole = mov['lum_whole']
     con_whole = mov['con_whole']

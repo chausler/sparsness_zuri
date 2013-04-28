@@ -3,6 +3,8 @@ import numpy as np
 from sklearn.metrics import r2_score
 from itertools import combinations
 from collections import deque
+from sklearn.preprocessing import normalize
+from scipy.interpolate import interp1d
 
 def do_thresh_corr(x, y, threshold=0.05, corr_type=None):
 
@@ -70,15 +72,15 @@ def filter(dat, bin_freq, type='exp', window=300, prm=0.2):
 #    plt.subplot(311)
 #    plt.plot(kern)
 #    plt.subplot(312)
-#    plt.plot(dat[:5].T)
+#    plt.plot(dat[:5, :50].T)
 #    plt.subplot(313)
-#    plt.plot(fr[:5].T)
+#    plt.plot(fr[:5,  :50].T)
 #    plt.show()
 
     return fr, len(kern) / 2
 
 
-def corr_trial_to_trial(trials, shift):
+def corr_trial_to_trial(trials, shift=0):
 
     samples = trials.shape[1]
     norm_idx = np.arange(samples)
@@ -92,7 +94,8 @@ def corr_trial_to_trial(trials, shift):
 
     xcorr = []
     for i, j in combinations(range(len(trials)), 2):
-        xcorr.append(do_thresh_corr(trials[i, norm_idx], trials[j, shift_idx], 'spearmanr'))
+        xcorr.append(do_thresh_corr(trials[i, norm_idx],
+                                    trials[j, shift_idx]))
     crr = np.array(xcorr).mean()
     return crr
 
@@ -109,6 +112,43 @@ def corr_trial_to_mean(trials, mn, edge=None):
     crr = np.array(xcorr).mean()
     return crr
 
+
+def pairwise_corr(dat, corr_type=None):
+    corrs = np.zeros([dat.shape[0], dat.shape[0]])
+    for i in range(dat.shape[0]):
+        for j in range(dat.shape[0]):
+            if i < j:
+                corrs[i, j] = do_thresh_corr(dat[i], dat[j],
+                                             corr_type=corr_type)
+                corrs[j, i] = corrs[i, j]
+    return corrs
+
+
+def normalise_cell(dat):
+    shp = dat.shape
+    dat = dat.reshape(-1, shp[2])
+    dat = normalize(dat, axis=0)
+    dat = np.reshape(dat, shp)
+    return dat
+
+
+def downsample(dat, orig_time, dwn_time):
+    f = interp1d(orig_time, dat, kind='cubic')
+    return f(dwn_time)
+
+def downsample_multi_dim(dat, orig_time, dwn_time):
+    dims = dat.shape
+    new_dat = np.zeros([len(dwn_time), np.array(dims[1:]).prod()])
+    dat = dat.reshape(len(orig_time), -1)
+    for i in xrange(dat.shape[1]):
+        print 'downsample dim %d of %d' % (i, dat.shape[1])
+        new_dat[:, i] = downsample(dat[:, i], orig_time, dwn_time)
+    new_dim = [len(dwn_time)] + list(dims[1:])
+    new_dat = np.reshape(new_dat, new_dim)
+    return new_dat
+    
+    
+    
 
 if __name__ == "__main__":
     tmp = np.zeros([1, 30])

@@ -1,5 +1,6 @@
 import sys
 sys.path.append('..')
+
 import numpy as np
 import pylab as plt
 from plotting.utils import adjust_spines, do_box_plot, do_spot_scatter_plot
@@ -21,10 +22,14 @@ from data_utils.utils import filter
 # look at centre_whole. we would expect the reliability to go up
 # decorrelation!!!
 # can we cluster cells based on their prediction powers.. does this lead to cell types?
-
-
+# look at average prediction of one neuron for all others over time as a measure of correlation/decorrelation
+# look at correlation within trials between neurons.
+filter = ['120425']
 exps = list_PopExps()
 for exp in exps:
+    if len(filter) > 0 and exp not in filter:
+        print exp, ' not in filter, skipping'
+        continue
     print exp
     dat = load_PopData(exp)
     dat_c = dat['dat_c']
@@ -33,23 +38,49 @@ for exp in exps:
     active = dat['active']
     d = np.where(active[:, 1])[0]
     print d
+
+    trl_w = dat_w.mean(0)
+    trl_c = dat_c.mean(0)
+
+    fig = plt.figure(figsize=(14, 8))
+    fig.set_facecolor('white')
+
+    ax = plt.subplot(211)
+    plt.hold(True)
+    plt.plot(trl_c)
+    plt.plot(trl_c.mean(1), '0.4', linewidth=4)
+    plt.xlim(0, trl_c.shape[0])
+    adjust_spines(ax, ['bottom', 'left'])
+    plt.title('Mask')
+
+    ax = plt.subplot(212)
+    plt.hold(True)
+    plt.plot(trl_w)
+    plt.plot(trl_w.mean(1), '0.4', linewidth=4)
+    plt.xlim(0, trl_w.shape[0])
+    adjust_spines(ax, ['bottom', 'left'])
+    plt.title('Whole')
+    plt.show()
+
+
     for cell in range(len(dat_w)):
         print active[cell]
         dtc = dat_c[cell]
         dtw = dat_w[cell]
-        
         fig = plt.figure(figsize=(14, 8))
         fig.set_facecolor('white')
 
         ax = plt.subplot(211)
-        plt.plot(dtc, '0.8')
+        plt.hold(True)
+        plt.plot(dtc)
         plt.plot(dtc.mean(1), '0.4', linewidth=2)
         plt.xlim(0, dat_c.shape[1])
         adjust_spines(ax, ['bottom', 'left'])
         plt.title('Mask')
 
         ax = plt.subplot(212)
-        plt.plot(dtw, '0.8')
+        plt.hold(True)
+        plt.plot(dtw)
         plt.plot(dtw.mean(1), '0.4', linewidth=2)
         plt.xlim(0, dat_w.shape[1])
         adjust_spines(ax, ['bottom', 'left'])

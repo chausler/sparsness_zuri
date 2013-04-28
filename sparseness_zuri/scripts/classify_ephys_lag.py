@@ -405,8 +405,8 @@ def do_lag_classification(exp_type='SOM', combs=['Frequency', 'Luminance', 'Cont
                 else:
                     print '\ndoing ', e['cellid']
                 changed = False
-                for s in range(len(shifts)):
-                    shift = str(shifts[s])
+                for shift in shifts:
+                    
                     for [targ_type, src_type] in targets:
                         k = '%s_%s' % (targ_type, src_type)
                         print exp_type, comb, k, shift
@@ -420,11 +420,11 @@ def do_lag_classification(exp_type='SOM', combs=['Frequency', 'Luminance', 'Cont
                             print 'done - continue'
                             continue
                         changed = True
-                        edges = [edge, np.abs(np.minimum(-edge, s))]
+                        edges = [edge, np.abs(np.minimum(-edge, shift))]
                         X, y, plot_params = get_mov_data(comb, targ_type,
                                                          src_type,
                                         e, cellid, exp_type, four_downsample,
-                                        shift=s, randomise=randomise)
+                                        shift=shift, randomise=randomise)
                         # ignore edge effects
                         pred, coefs = CV(clf,
                                 X, y, folds=folds, clf_args=clf_args,

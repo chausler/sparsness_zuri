@@ -100,7 +100,7 @@ def corr_trial_to_trial(trials, shift=0):
     return crr
 
 
-def corr_trial_to_mean(trials, mn, edge=None):
+def corr_trial_to_mean(trials, mn=None, edge=None):
     if mn is None:
         mn = trials.mean(0)
     xcorr = []

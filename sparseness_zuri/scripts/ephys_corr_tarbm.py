@@ -30,6 +30,7 @@ for exp_type in patches.keys():
                 if act_type not in patches[exp_type][cell_id]['corrs'][rbm_type]:
                     patches[exp_type][cell_id]['corrs'][rbm_type][act_type]  = {}
                 pred = patches[exp_type][cell_id]['responses'][rbm_type][act_type][1]
+                changed = False
                 for shift in e[cell_id]['shifts']:
                     print shift
                     if shift not in patches[exp_type][cell_id]['corrs'][rbm_type][act_type]:
@@ -46,6 +47,7 @@ for exp_type in patches.keys():
                         crr = corr_trial_to_mean(dt, cell_dat)
                         crr_mn = do_thresh_corr(dt.mean(0), cell_dat)
                         cell_crr = corr_trial_to_trial(dt)
+                        changed = True
                         patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['crr'] = crr
                         patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['crr_mn'] = crr_mn
                         patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['cell_crr'] = cell_crr
@@ -53,8 +55,9 @@ for exp_type in patches.keys():
                             print '%s %s %s %s %s: cell: %d, corr: %.3f, pred corr: %.3f, crr mn: %.3f' % (
                                             exp_type, cell_id, rbm_type,
                                             act_type, shift, cell, cell_crr, crr, crr_mn)
-                print 'saving'
-                np.save('mask_data_complete', patches)
+                if changed:
+                    print 'saving'
+                    np.save('mask_data_complete', patches)
 #    [rbm_type]
 
 

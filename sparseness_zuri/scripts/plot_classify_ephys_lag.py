@@ -6,7 +6,11 @@ import numpy as np
 
 randomise = None
 filt = 0.1
-for exp_type in ['FS', 'PYR', 'SOM']:
+cell_max = {}
+colors = ['r', 'b', 'g']
+style = ['x', 'o', '<']
+exp_types = ['FS', 'PYR', 'SOM']
+for exp_type in exp_types:
     fig_path = startup.fig_path + 'Sparseness/%s/pred/' % (exp_type)
     dat_path = startup.data_path + 'Sparseness/%s/pred/' % (exp_type)
     if randomise is not None:
@@ -65,7 +69,7 @@ for exp_type in ['FS', 'PYR', 'SOM']:
             sigs = []
             for shift in shifts:
                 xs.append(shift)
-                trl = np.array(dat[k][cmb][str(shift)])
+                trl = np.array(dat[k][cmb][shift])
                 n = len(trl)
                 if k not in crr_sum:
                     crr_sum[k] = {}
@@ -168,7 +172,7 @@ for exp_type in ['FS', 'PYR', 'SOM']:
 
     shift_max = {}
     for cell in cell_results.keys():
-        for k in cell_results[cell].keys():
+        for k in cell_results[cell].keys():            
             for cmb in cell_results[cell][k].keys():
                 for s in cell_results[cell][k][cmb].keys():
                     if k not in shift_max:
@@ -194,8 +198,8 @@ for exp_type in ['FS', 'PYR', 'SOM']:
         # for each shift, get the maximum correlation for each cell
         for s in shifts:
             vals = []
-            for cell in shift_max[k][str(s)].keys():
-                vals.append(np.array(shift_max[k][str(s)][cell]).max())
+            for cell in shift_max[k][s].keys():
+                vals.append(np.array(shift_max[k][s][cell]).max())
             crrs.append(vals)
         crrs = np.array(crrs)
         ax = plt.subplot(1, 2, i + 1)
@@ -209,11 +213,79 @@ for exp_type in ['FS', 'PYR', 'SOM']:
         adjuster = np.array([-0.5, 0.5])
         ax.set_ylim(-0.05, 1)
         ax.set_xlim(np.array([shifts.min(), shifts.max()]) + adjuster)
-    plt.subplots_adjust(left=0.03, bottom=0.05, right=0.97, top=0.95,
+    plt.subplots_adjust(left=0.06, bottom=0.05, right=0.97, top=0.95,
                        wspace=0.23, hspace=0.1)
     fig4.savefig(fig_path + '%.2f_%s_shift_max.eps' % (filt, exp_type))
     fig4.savefig(fig_path + '%.2f_%s_shift_max.png' % (filt, exp_type))
     plt.close(fig4)
 
+    cell_max[exp_type] = []
+    for cell in cell_results.keys():
+        mx = 0
+        time = None
+        for k in cell_results[cell].keys():
+            
+            for cmb in cell_results[cell][k].keys():
+                for s in cell_results[cell][k][cmb].keys():
+                    val = cell_results[cell][k][cmb][s]['crr_pred']
+                    if val >= mx:
+                        mx = val
+                        time = s
+        cell_max[exp_type].append([time, mx])
+    cell_max[exp_type] = np.array(cell_max[exp_type])
+
+fig5 = plt.figure(figsize=(14, 8))
+plt.hold(True)
+cnt = 1
+for i, exp_type in enumerate(exp_types):
+    ax = plt.subplot(3, 1, i + 1)
+    plt.scatter(cell_max[exp_type][:, 0], cell_max[exp_type][:, 1],
+                c='r', marker='x')
+#                c=colors[i], marker=style[i])
+    plt.ylabel('mean r^2 of responders')
+    if i == 2:
+        plt.xlabel('Shift in Frames')
+        adjust_spines(ax, ['bottom', 'left'])
+    else:
+        adjust_spines(ax, ['left'])
+    plt.title(exp_type)
+    adjuster = np.array([-0.5, 0.5])
+    ax.set_ylim(-0.05, 1)
+    ax.set_xlim(np.array([shifts.min(), shifts.max()]) + adjuster)
+
+plt.subplots_adjust(left=0.06, bottom=0.06, right=0.97, top=0.95,
+                   wspace=0.23, hspace=0.23)
+fig_path = startup.fig_path + 'Sparseness/summary/'
+fig5.savefig(fig_path + '%.2f_shift_best.eps' % (filt))
+fig5.savefig(fig_path + '%.2f_shift_best.png' % (filt))
+
+plt.close(fig5)
+
+
+fig6 = plt.figure(figsize=(14, 8))
+plt.hold(True)
+cnt = 1
+bins = list(shifts - 0.5) + [0.5]
+for i, exp_type in enumerate(exp_types):
+    ax = plt.subplot(3, 1, i + 1)
+    plt.hist(cell_max[exp_type][:, 0], bins=bins, normed=True)
+#                c=colors[i], marker=style[i])
+    plt.ylabel('# best responders')
+    if i == 2:
+        plt.xlabel('Shift in Frames')
+        adjust_spines(ax, ['bottom', 'left'])
+    else:
+        adjust_spines(ax, ['left'])
+    plt.title(exp_type)
+    adjuster = np.array([-0.5, 0.5])
+    ax.set_xlim(np.array([shifts.min(), shifts.max()]) + adjuster)
+    ax.set_ylim(-0.05, 0.5)
+plt.subplots_adjust(left=0.06, bottom=0.06, right=0.97, top=0.95,
+                   wspace=0.23, hspace=0.23)
+fig_path = startup.fig_path + 'Sparseness/summary/'
+fig6.savefig(fig_path + '%.2f_shift_best_hist.eps' % (filt))
+fig6.savefig(fig_path + '%.2f_shift_best_hist.png' % (filt))
+plt.show()
+plt.close(fig6)
 
 

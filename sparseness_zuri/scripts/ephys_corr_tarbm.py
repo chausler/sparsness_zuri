@@ -46,7 +46,7 @@ for exp_type in patches.keys():
                             continue
                         crr = corr_trial_to_mean(dt, cell_dat)
                         crr_mn = do_thresh_corr(dt.mean(0), cell_dat)
-                        cell_crr = corr_trial_to_trial(dt)
+                        cell_crr = corr_trial_to_mean(dt)
                         changed = True
                         patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['crr'] = crr
                         patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['crr_mn'] = crr_mn

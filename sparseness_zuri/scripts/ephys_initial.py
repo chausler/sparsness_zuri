@@ -15,7 +15,7 @@ from data_utils.utils import do_thresh_corr, corr_trial_to_mean
 exp_types = ['FS', 'PYR', 'SOM']
 groups = ['R^2: Trial to Mean', 'Avg Activation', 'R^2: Trial Types']
 colors = ['r', 'b', 'g', 'y', 'c', 'm']
-headers = ['CellId', 'XCorr Center', 'XCorr Whole', 'XCorr Center',
+headers = ['CellId', 'XCorr Center', 'XCorr Whole', 'XCorr Surround',
                        'Avg Center', 'Avg Whole', 'Avg Surround',
                        'XCorr C v W', 'XCorr C v S', 'XCorr S v W']
 filters = [0.1]
@@ -34,7 +34,7 @@ for randomise in [None, 'generated', 'random']:
             fname = '%s%s' % (f_path, 'initial_summary.png')
             if os.path.exists(fname):
                 print fname + ' exist, SKIPPING'
-                continue
+#                continue
             dat = load_EphysData(exp_type, filt=filt)
             csv_vals = []
             cellids = []

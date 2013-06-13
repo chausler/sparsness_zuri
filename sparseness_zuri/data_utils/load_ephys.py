@@ -366,6 +366,7 @@ if __name__ == "__main__":
     dat = load_EphysData(exp_type)
     for e in dat.values():
         cellid = e['cellid']
+        print e['bin_freq']
         mov = movie.load_movie_data(cellid, exp_type)
         movie.load_parsed_movie_dat(cellid, exp_type)
         four_mask = mov['four_mask']

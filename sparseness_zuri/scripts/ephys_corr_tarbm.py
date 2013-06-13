@@ -9,15 +9,19 @@ sys.path.append('..')
 from data_utils.movie import load_movie_data
 from data_utils.load_ephys import load_EphysData
 from data_utils.utils import corr_trial_to_mean, corr_trial_to_trial, do_thresh_corr
+import os
 
-
-patches = np.load('mask_data_complete.npy')
+stim_type = 'psth_w_shift'
+if os.path.exists('mask_data_complete_%s.npy' % stim_type):
+    patches = np.load('mask_data_complete_%s.npy' % stim_type)
+else:
+    patches = np.load('mask_data_complete.npy')
 patches = patches.item()
 
 for exp_type in patches.keys():
     e = load_EphysData(exp_type)
     for cell_id in patches[exp_type].keys():
-        dat = e[cell_id]['psth_c_shift']
+        dat = e[cell_id][stim_type]
         if 'corrs' not in patches[exp_type][cell_id]:
             patches[exp_type][cell_id]['corrs'] = {}
         for rbm_type in patches[exp_type][cell_id]['responses'].keys():
@@ -57,7 +61,7 @@ for exp_type in patches.keys():
                                             act_type, shift, cell, cell_crr, crr, crr_mn)
                 if changed:
                     print 'saving'
-                    np.save('mask_data_complete', patches)
+                    np.save('mask_data_complete_%s' % stim_type, patches)
 #    [rbm_type]
 
 

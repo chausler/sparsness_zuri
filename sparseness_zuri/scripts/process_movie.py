@@ -1,6 +1,7 @@
 import matplotlib
 # force plots to file. no display. comment out to use plt.show()
 #matplotlib.use('Agg')
+import Image
 import numpy.fft as fft
 import numpy as np
 import sys
@@ -100,6 +101,7 @@ def get_frequencies(dat):
     assert(dat.shape[0] == dat.shape[1])
     mid = (dat.shape[0] / 2)
     end = dat.shape[0]
+    dat = np.abs( dat ) ** 2
     freqs = []    
 #    plt.figure()
     for i in range(1, end - mid):
@@ -109,7 +111,7 @@ def get_frequencies(dat):
         ring.append(dat[mid - i: mid + i + 1, mid - i])
         ring.append(dat[mid - i: mid + i + 1, mid + i])
         tmp = np.array(ring)
-        ring = [tmp.max(), tmp.mean()]
+        ring = tmp.mean()
         freqs.append(ring)
     return np.array(freqs).ravel()
 
@@ -126,11 +128,12 @@ def get_frequencies(dat):
 def get_orientations(dat):
     assert(dat.shape[0] == dat.shape[1])
     mid = (dat.shape[0] / 2)
+    dat = np.abs( dat ) ** 2
     orients = np.array([
-                    dat[mid, :].max(),
-                    dat[:, mid].max(),
-                    dat.diagonal().max(),
-                    np.array(zip(*dat[::-1])).diagonal().max(),
+#                    dat[mid, :].max(),
+#                    dat[:, mid].max(),
+#                    dat.diagonal().max(),
+#                    np.array(zip(*dat[::-1])).diagonal().max(),
                     dat[mid, :].mean(),
                     dat[:, mid].mean(),
                     dat.diagonal().mean(),
@@ -139,7 +142,7 @@ def get_orientations(dat):
     return orients
 
 
-def get_fourier2D(movie, dim_lim=7):
+def get_fourier2D(movie, dim_lim=15):
     fouriers = []
     orients = []
     freqs = []
@@ -148,24 +151,26 @@ def get_fourier2D(movie, dim_lim=7):
         if i % 50 == 0:
             print 'frame %d of %d' % (i, len(movie))
         frame = frame / 255.
+        frame = np.array(Image.fromarray(frame).resize([dim_lim, dim_lim]).getdata()).reshape([dim_lim, dim_lim])
         A = fft.fftshift(fft.fft2(frame))
-        added = np.sqrt(A.real ** 2 + A.imag ** 2)
+#        added = np.sqrt(A.real ** 2 + A.imag ** 2)
+#        added = np.abs( F2 )**2
         #added *= np.sign(A.imag)
-        fouriers.append(added)
+        fouriers.append(A)
     fouriers = np.array(fouriers)
-    tmp = fouriers.max(0)
-    thresh = tmp.mean() + 4 * np.std(tmp)
-    tmp = tmp > thresh
-    midx = np.ceil(tmp.shape[0] / 2.)
-    midy = np.ceil(tmp.shape[1] / 2.)
-    diff_x = dim_lim
-    diff_y = dim_lim
-    if diff_x < 1:
-        diff_x = 1
-    if diff_y < 1:
-        diff_y = 1
-    fouriers = fouriers[:, np.maximum(midx - diff_x, 0):midx + diff_x + 1, :]
-    fouriers = fouriers[:, :,  np.maximum(midy - diff_y, 0):midy + diff_y + 1]
+#    tmp = fouriers.max(0)
+#    thresh = tmp.mean() + 4 * np.std(tmp)
+#    tmp = tmp > thresh
+#    midx = np.ceil(tmp.shape[0] / 2.)
+#    midy = np.ceil(tmp.shape[1] / 2.)
+#    diff_x = dim_lim
+#    diff_y = dim_lim
+##    if diff_x < 1:
+##        diff_x = 1
+##    if diff_y < 1:
+##        diff_y = 1
+#    fouriers = fouriers[:, np.maximum(midx - diff_x, 0):midx + diff_x + 1, :]
+#    fouriers = fouriers[:, :,  np.maximum(midy - diff_y, 0):midy + diff_y + 1]
 
     for f in fouriers:
         orients.append(get_orientations(f))
@@ -199,6 +204,7 @@ def plot_movie(lum, con, flow, four, movie, fname):
     total_plots = 4
     frames = np.linspace(0, num_frames - 1, total_plots).astype(np.int)
     print 'plotting frames ', frames
+    four = np.abs(four) ** 2
     lims = [four[0, frames].min(), four[0, frames].max()]
     for i, _ in enumerate(frames):
         ax = plt.subplot(3, 6, 3 + i, aspect='equal')
@@ -247,7 +253,7 @@ def plot_surround(lum, con, flow, four, movie, fname):
     num_frames = lum.shape[1]
     fig = plt.figure(figsize=(16, 9))
     fig.set_facecolor('white')
-
+    four = np.abs(four) ** 2
     parts = lum.shape[0]
     time = np.arange(0, num_frames, 20)
     for s in range(parts):
@@ -652,5 +658,9 @@ def process_movie_pop(exp_type='POP'):
 
 if __name__ == "__main__":
     exp_type = 'POP'
-    process_movie_pop()
+    process_movie_ephys('FS')
+    process_movie_ephys('SOM')
+    process_movie_ephys('PYR')
+    
+    #process_movie_pop()
 #        animate_matrix_multi([masked, four_mask])

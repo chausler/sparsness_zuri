@@ -3,10 +3,13 @@ import startup
 from plotting.utils import adjust_spines, do_box_plot, do_spot_scatter_plot, plot_mean_std
 import pylab as plt
 import numpy as np
-
+from plot_classify_ephys_sub import plot_cell_summary
 randomise = None
 filt = 0.1
-cell_max = {}
+cell_max_time = {}
+cell_max_type = {}
+cmb_types = {}
+stim_types = {}
 colors = ['r', 'b', 'g']
 style = ['x', 'o', '<']
 exp_types = ['FS', 'PYR', 'SOM']
@@ -54,7 +57,11 @@ for exp_type in exp_types:
     crr_sum = {}
     for aa, k in enumerate(sorted(dat.keys())):
         print k
+        if k not in stim_types:
+            stim_types[k] = None
         for bb, cmb in enumerate(sorted(dat[k].keys())):
+            if cmb not in cmb_types:
+                cmb_types[cmb] = None
             cnt = (aa * b) + bb + 1 
             print k, cmb, cnt
             title = ''
@@ -172,7 +179,7 @@ for exp_type in exp_types:
 
     shift_max = {}
     for cell in cell_results.keys():
-        for k in cell_results[cell].keys():            
+        for k in cell_results[cell].keys():
             for cmb in cell_results[cell][k].keys():
                 for s in cell_results[cell][k][cmb].keys():
                     if k not in shift_max:
@@ -219,41 +226,64 @@ for exp_type in exp_types:
     fig4.savefig(fig_path + '%.2f_%s_shift_max.png' % (filt, exp_type))
     plt.close(fig4)
 
-    cell_max[exp_type] = []
+    cell_max_type[exp_type] = {}
+    cell_max_time[exp_type] = {}
+    cell_mx = {}
     for cell in cell_results.keys():
-        mx = 0
-        time = None
         for k in cell_results[cell].keys():
-            
+            if k not in cell_max_time[exp_type]:
+                cell_max_time[exp_type][k] = []
+            if k not in cell_max_type[exp_type]:
+                cell_max_type[exp_type][k] = {}
+            mx = -1.
+            time = None
+            clf_type = None
             for cmb in cell_results[cell][k].keys():
-                for s in cell_results[cell][k][cmb].keys():
+                for s in sorted(cell_results[cell][k][cmb].keys())[::-1]:
+                    print k, cmb, s, cell
                     val = cell_results[cell][k][cmb][s]['crr_pred']
-                    if val >= mx:
+                    if val > mx:
                         mx = val
                         time = s
-        cell_max[exp_type].append([time, mx])
-    cell_max[exp_type] = np.array(cell_max[exp_type])
+                        clf_type = cmb
+            cell_max_time[exp_type][k].append([time, mx])
+            if clf_type in cell_max_type[exp_type][k]:
+                cell_max_type[exp_type][k][clf_type].append(mx)
+            else:
+                cell_max_type[exp_type][k][clf_type] = [mx]
+            cell_mx[k] = [time, clf_type, cell_results[cell][k][clf_type][time]]
+        plot_cell_summary(exp_type, cell, cell_mx)
+    for k in cell_max_time[exp_type]: 
+        cell_max_time[exp_type][k] = np.array(cell_max_time[exp_type][k])
+
 
 fig5 = plt.figure(figsize=(14, 8))
 plt.hold(True)
 cnt = 1
-for i, exp_type in enumerate(exp_types):
-    ax = plt.subplot(3, 1, i + 1)
-    plt.scatter(cell_max[exp_type][:, 0], cell_max[exp_type][:, 1],
-                c='r', marker='x')
-#                c=colors[i], marker=style[i])
-    plt.ylabel('mean r^2 of responders')
-    if i == 2:
-        plt.xlabel('Shift in Frames')
-        adjust_spines(ax, ['bottom', 'left'])
-    else:
-        adjust_spines(ax, ['left'])
-    plt.title(exp_type)
-    adjuster = np.array([-0.5, 0.5])
-    ax.set_ylim(-0.05, 1)
-    ax.set_xlim(np.array([shifts.min(), shifts.max()]) + adjuster)
+for exp_type in exp_types:
+    for k in sorted(stim_types):
+        ax = plt.subplot(3, 2, cnt)
+        plt.scatter(cell_max_time[exp_type][k][:, 0],
+                    cell_max_time[exp_type][k][:, 1],
+                    c='r', marker='x')
+    #                c=colors[i], marker=style[i])
+        plt.ylabel('mean r^2 of responders')
+        if ax.is_last_row():
+            plt.xlabel('Shift in Frames')
+            adjust_spines(ax, ['bottom', 'left'])
+        else:
+            adjust_spines(ax, ['left'])
+        if ax.is_first_row():
+            plt.title(k)
+        if ax.is_first_col():
+            ax.text(-0.12, 0.5, exp_type, transform=ax.transAxes,
+                    rotation='vertical', va='center', ha='center')
+        adjuster = np.array([-0.5, 0.5])
+        ax.set_ylim(-0.05, 1)
+        ax.set_xlim(np.array([shifts.min(), shifts.max()]) + adjuster)
+        cnt += 1
 
-plt.subplots_adjust(left=0.06, bottom=0.06, right=0.97, top=0.95,
+plt.subplots_adjust(left=0.1, bottom=0.06, right=0.97, top=0.95,
                    wspace=0.23, hspace=0.23)
 fig_path = startup.fig_path + 'Sparseness/summary/'
 fig5.savefig(fig_path + '%.2f_shift_best.eps' % (filt))
@@ -266,26 +296,69 @@ fig6 = plt.figure(figsize=(14, 8))
 plt.hold(True)
 cnt = 1
 bins = list(shifts - 0.5) + [0.5]
-for i, exp_type in enumerate(exp_types):
-    ax = plt.subplot(3, 1, i + 1)
-    plt.hist(cell_max[exp_type][:, 0], bins=bins, normed=True)
-#                c=colors[i], marker=style[i])
-    plt.ylabel('# best responders')
-    if i == 2:
-        plt.xlabel('Shift in Frames')
-        adjust_spines(ax, ['bottom', 'left'])
-    else:
-        adjust_spines(ax, ['left'])
-    plt.title(exp_type)
-    adjuster = np.array([-0.5, 0.5])
-    ax.set_xlim(np.array([shifts.min(), shifts.max()]) + adjuster)
-    ax.set_ylim(-0.05, 0.5)
+for exp_type in exp_types:
+    for k in sorted(stim_types):
+        ax = plt.subplot(3, 2, cnt)
+        cnt += 1
+        plt.hist(cell_max_time[exp_type][k][:, 0], bins=bins, normed=True)
+        if ax.is_last_row():
+            plt.xlabel('Shift in Frames')
+            adjust_spines(ax, ['bottom', 'left'])
+        else:
+            adjust_spines(ax, ['left'])
+        if ax.is_first_row():
+            plt.title(k)
+        if ax.is_first_col():
+            ax.text(-0.12, 0.5, exp_type, transform=ax.transAxes,
+                    rotation='vertical', va='center', ha='center')
+            plt.ylabel('# best responders')
+        adjuster = np.array([-0.5, 0.5])
+        ax.set_xlim(np.array([shifts.min(), shifts.max()]) + adjuster)
+        ax.set_ylim(-0.05, 0.5)
 plt.subplots_adjust(left=0.06, bottom=0.06, right=0.97, top=0.95,
                    wspace=0.23, hspace=0.23)
 fig_path = startup.fig_path + 'Sparseness/summary/'
 fig6.savefig(fig_path + '%.2f_shift_best_hist.eps' % (filt))
 fig6.savefig(fig_path + '%.2f_shift_best_hist.png' % (filt))
-plt.show()
+#plt.show()
 plt.close(fig6)
+
+
+fig7 = plt.figure(figsize=(14, 8))
+plt.hold(True)
+cnt = 1
+for exp_type in exp_types:
+    for k in sorted(stim_types):
+        ax = plt.subplot(3, 2, cnt)
+        cnt += 1
+        for j, cmb in enumerate(sorted(cmb_types)):
+                if cmb in cell_max_type[exp_type][k]:
+                    print cmb
+                    do_spot_scatter_plot(
+                        np.array(cell_max_type[exp_type][k][cmb]), j, 'k',
+                        0.4, False)
+        if ax.is_last_row():
+            adjust_spines(ax, ['bottom', 'left'])
+            plt.xlabel('Classifier Type')
+            ax.set_xticks(range(len(cmb_types)))
+            ax.set_xticklabels(sorted(cmb_types))
+            plt.setp(ax.get_xticklabels(), rotation='vertical')
+        else:
+            adjust_spines(ax, ['left'])
+        ax.set_ylim(-0.05, 1)
+        ax.set_xlim(-0.5, len(cmb_types) - 0.5)
+        if ax.is_first_row():
+            plt.title(k)
+        if ax.is_first_col():
+            ax.text(-0.12, 0.5, exp_type, transform=ax.transAxes,
+                    rotation='vertical', va='center', ha='center')
+            plt.ylabel('mean r^2 of responders')
+plt.subplots_adjust(left=0.06, bottom=0.15, right=0.97, top=0.95,
+                   wspace=0.23, hspace=0.23)
+fig_path = startup.fig_path + 'Sparseness/summary/'
+fig7.savefig(fig_path + '%.2f_cmb_best.eps' % (filt))
+fig7.savefig(fig_path + '%.2f_cmb_best.png' % (filt))
+
+plt.close(fig7)
 
 

@@ -206,6 +206,7 @@ def get_mov_data(comb, targ_type, src_type, e, cellid, exp_type,
                     pre_len = all_dat.shape[1]
                 else:
                     pre_len = 0
+                f = np.append(f.real, f.imag, 1)
                 all_dat = append_Nones(all_dat, f, 1)
                 idx_four += [range(pre_len, all_dat.shape[1])]
                 four_shape.append(four_mask_shape)
@@ -351,8 +352,8 @@ def append_Nones(target, addition, axis=1):
     return target
 
 
-def do_lag_classification(exp_type='SOM', combs=['Frequency', 'Luminance', 'Contrast',
-                        'Orientation',  'Fourier', 'Flow'],
+def do_lag_classification(exp_type='SOM', combs=['Fourier', 'Frequency', 'Luminance', 'Contrast',
+                        'Orientation',  'Flow'],
                       targets=[['Center', 'Center'], ['Whole', 'Whole']],
                       max_comb=None, min_comb=None,
                        four_downsample=None, max_exp=None, sig_thresh=0.,
@@ -406,10 +407,8 @@ def do_lag_classification(exp_type='SOM', combs=['Frequency', 'Luminance', 'Cont
                     print '\ndoing ', e['cellid']
                 changed = False
                 for shift in shifts:
-                    
                     for [targ_type, src_type] in targets:
-                        k = '%s_%s' % (targ_type, src_type)
-                        print exp_type, comb, k, shift
+                        k = '%s_%s' % (targ_type, src_type)                        
                         if k not in cell_results[cellid]:
                             cell_results[cellid][k] = {}
                         if full_comb not in cell_results[cellid][k]:
@@ -436,6 +435,7 @@ def do_lag_classification(exp_type='SOM', combs=['Frequency', 'Luminance', 'Cont
                         crr_pred = np.maximum(r2_score(mn, pred), 0)
                         crr_exp = corr_trial_to_mean(y[:, edges[0]: -edges[1]],
                                                      mn)
+                        print exp_type, comb, k, shift, crr_pred
                         res = {}
                         res['pred'] = pred
                         res['mn'] = mn
@@ -456,7 +456,7 @@ if __name__ == "__main__":
     # now its mask movie values for all predictions
     # try also whole
     # and make box plots!
-    downsample = 7
+    downsample = None
     exp_types = ['FS', 'PYR', 'SOM']
     randomisers = [None, 'generated', 'random']
     for r in randomisers:

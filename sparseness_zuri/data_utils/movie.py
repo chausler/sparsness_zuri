@@ -77,3 +77,25 @@ def load_parsed_movie_dat(cellid, exp_type='SOM', four_downsample=None):
             freq_surr, orient_surr,\
             lum_whole, con_whole, flow_whole, four_whole, four_whole_shape,\
             freq_whole, orient_whole
+
+
+if __name__ == "__main__":
+    for exp_type in ['SOM', 'FS', 'PYR']:
+        from data_utils.load_ephys import load_EphysData
+        import Image
+        import pylab as plt
+        size = 15
+        ephys = load_EphysData(exp_type)
+        for e in ephys.values():
+            cellid = e['cellid']
+            mov = load_movie_data(cellid, exp_type)
+            mov = mov['masked'][0]
+            print mov.shape
+            for i in range(5):
+                plt.subplot(2, 5, i + 1)
+                plt.imshow(mov[i*10], cmap=plt.cm.gray)
+                plt.subplot(2, 5, i + 6)
+                xx = mov[i*10]
+                xx = np.array(Image.fromarray(xx).resize([size, size]).getdata()).reshape([size, size])
+                plt.imshow(xx, cmap=plt.cm.gray)
+            plt.show()

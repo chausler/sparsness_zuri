@@ -10,7 +10,7 @@ sys.path = ['/home/chris/programs/scikit-learn'] + sys.path
 import numpy.fft as fft
 import startup
 from plotting.utils import adjust_spines, do_box_plot, do_spot_scatter_plot
-from data_utils.utils import filter
+from data_utils.utils import filter, do_thresh_corr
 from data_utils.load_ephys import load_EphysData
 from data_utils.movie import load_parsed_movie_dat
 #from sklearn.linear_model import LinearRegression as clf
@@ -432,14 +432,16 @@ def do_lag_classification(exp_type='SOM', combs=['Fourier', 'Frequency', 'Lumina
                         pred = pred[edges[0]: -edges[1]]
                         mn = y[:, edges[0]: -edges[1]].mean(0)
                         std = np.std(y[:, edges[0]: -edges[1]])
-                        crr_pred = np.maximum(r2_score(mn, pred), 0)
+                        crr_pred_r2 = np.maximum(r2_score(mn, pred), 0)
+                        crr_pred = do_thresh_corr(mn, pred, do_abs=True, corr_type='pearsonr')
                         crr_exp = corr_trial_to_mean(y[:, edges[0]: -edges[1]],
                                                      mn)
-                        print exp_type, comb, k, shift, crr_pred
+                        print exp_type, comb, k, shift, crr_pred, crr_pred_r2
                         res = {}
                         res['pred'] = pred
                         res['mn'] = mn
                         res['std'] = std
+                        res['crr_pred_r2'] = crr_pred_r2
                         res['crr_pred'] = crr_pred
                         res['crr_exp'] = crr_exp
                         res['coefs'] = coefs
@@ -457,7 +459,7 @@ if __name__ == "__main__":
     # try also whole
     # and make box plots!
     downsample = None
-    exp_types = ['FS', 'PYR', 'SOM']
+    exp_types = ['FS', 'SOM', 'PYR']
     randomisers = [None, 'generated', 'random']
     for r in randomisers:
         for exp_type in exp_types:

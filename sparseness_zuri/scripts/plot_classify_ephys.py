@@ -35,7 +35,7 @@ def plot_four(four_weights, ylims, plt_num=[1, 1, 1], title=None,
     if ax_off:
         adjust_spines(ax, [])
     else:
-        adjust_spines(ax, ['bottom', 'left'])        
+        adjust_spines(ax, ['bottom', 'left'])
     if title is None:
         title = 'Filter'
     plt.title(title)

@@ -5,6 +5,7 @@ from plotting.utils import adjust_spines, do_box_plot, do_spot_scatter_plot, plo
 import numpy.fft as fft
 import pylab as plt
 import numpy as np
+from colors import CoolWarm
 # Some Colours for plotting
 clr1 = '0.3'
 clr2 = '0.9'
@@ -97,39 +98,68 @@ def plot_cell_summary(exp_type, cell, cell_mx):
         if rows > 1:
             all_weights = None
             plot_params = dat['plot_params']
-            weights = dat['coefs'].mean(0)
-
             if 'Fourier' in cell_mx[k][1]:
-                inds = [0, 0]
-                for f in plot_params['idx_four']:                    
-                    four_weights = weights[f].reshape(plot_params['four_shape'][0])
-                    ff = reverse_fft(four_weights)                    
-                    if all_weights is None:
-                        nx = int(np.sqrt(len(plot_params['idx_four'])))
-                        x = plot_params['four_shape'][0][0]
-                        xx = x * nx
-                        all_weights = np.zeros([xx, xx])
-                    all_weights[inds[0]: inds[0] + x,
-                                inds[1]: inds[1] + x] = ff
-                    inds[1] += x
-                    if inds[1] == xx:
-                        inds[0] += x
-                        inds[1] = 0
-                    plot_four(all_weights, [0, np.abs(all_weights).max()],
+                weights = dat['coefs']
+                div = (weights.shape[1] / 2)
+                weights = weights[:, :div] + weights[:, div:] * 1j
+                mn_weight = None
+                cntt = 0
+                for w in weights:
+                    cntt += 1
+                    w = w.reshape([np.sqrt(w.shape[0]), np.sqrt(w.shape[0])])
+                    w = reverse_fft(w)
+#                    plt.subplot(4, 4, cntt)
+#                    plt.imshow(w, cmap=CoolWarm)
+#                    plt.colorbar()
+#                    plt.title(cntt)
+                    if mn_weight is None:
+                        mn_weight = w
+                    else:
+                        mn_weight += w
+
+                mn_weight = mn_weight / cntt
+#                plt.subplot(4, 4, cntt + 1)
+#                plt.imshow(mn_weight, cmap=CoolWarm)
+#                plt.colorbar()
+#                plt.show()
+                plot_four(mn_weight, [0, np.abs(mn_weight).max()],
                           [rows, 2, cnt + 2],
                               interpolation='bilinear')
+#                print weights.shape
+#                print 'FIX THIS: TAKE THE AVERAGE OF THE FILTERS AFTER THE FFT REVERSAL'
+#                assert False
+#                inds = [0, 0]
+#                for f in plot_params['idx_four']:
+#                    four_weights = weights[f].reshape(plot_params['four_shape'][0])
+#                    ff = reverse_fft(four_weights)
+#                    if all_weights is None:
+#                        nx = int(np.sqrt(len(plot_params['idx_four'])))
+#                        x = plot_params['four_shape'][0][0]
+#                        xx = x * nx
+#                        all_weights = np.zeros([xx, xx])
+#                    all_weights[inds[0]: inds[0] + x,
+#                                inds[1]: inds[1] + x] = ff
+#                    inds[1] += x
+#                    if inds[1] == xx:
+#                        inds[0] += x
+#                        inds[1] = 0
+#                    plot_four(all_weights, [0, np.abs(all_weights).max()],
+#                          [rows, 2, cnt + 2],
+#                              interpolation='bilinear')
             elif 'Orientation' in cell_mx[k][1]:
-                print weights
+                weights = dat['coefs'].mean(0)
                 plot_preds_orient(weights, [rows, 2, cnt + 2])
             elif'Frequency' in cell_mx[k][1]:
+                weights = dat['coefs'].mean(0)
                 plot_preds_freq(weights, [rows, 2, cnt + 2])
         cnt += 1
-        fig_path = startup.fig_path + 'Sparseness/%s/pred/best/' % (exp_type)
-        if not os.path.exists(fig_path):
-            os.makedirs(fig_path)
-        fname = '%s%s' % (fig_path, cell)
-        fig.savefig(fname + '.eps')
-        fig.savefig(fname + '.png')
+    fig_path = startup.fig_path + 'Sparseness/%s/pred/best/' % (exp_type)
+    if not os.path.exists(fig_path):
+        os.makedirs(fig_path)
+    fname = '%s%s' % (fig_path, cell)
+    fig.savefig(fname + '.eps')
+    fig.savefig(fname + '.png')
+    plt.close(fig)
 
 
 def plot_prediction(pred, actual, title, plt_num=[1, 1, 1], legend=True):

@@ -50,12 +50,14 @@ for exp_type in patches.keys():
                             continue
                         crr = corr_trial_to_mean(dt, cell_dat)
                         crr_mn = do_thresh_corr(dt.mean(0), cell_dat)
+                        crr_mn_r2 = do_thresh_corr(dt.mean(0), cell_dat, corr_type=None)
                         cell_crr = corr_trial_to_mean(dt)
                         changed = True
                         patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['crr'] = crr
                         patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['crr_mn'] = crr_mn
+                        patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['crr_mn_r2'] = crr_mn_r2
                         patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['cell_crr'] = cell_crr
-                        if (crr > 0.01 and crr >= cell_crr) or crr_mn > 0.01:
+                        if (crr > 0.01 and crr >= cell_crr) or crr_mn > 0.1:
                             print '%s %s %s %s %s: cell: %d, corr: %.3f, pred corr: %.3f, crr mn: %.3f' % (
                                             exp_type, cell_id, rbm_type,
                                             act_type, shift, cell, cell_crr, crr, crr_mn)

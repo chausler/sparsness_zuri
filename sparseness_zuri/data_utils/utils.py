@@ -6,7 +6,8 @@ from collections import deque
 from sklearn.preprocessing import normalize
 from scipy.interpolate import interp1d
 
-def do_thresh_corr(x, y, threshold=0.05, corr_type=None):
+
+def do_thresh_corr(x, y, threshold=0.05, corr_type='pearsonr', do_abs=True):
 
     if corr_type == 'pearsonr':
         c, p = pearsonr(x, y)
@@ -17,8 +18,7 @@ def do_thresh_corr(x, y, threshold=0.05, corr_type=None):
         return c
     if p > threshold or np.isnan(c):
         c = 0.
-
-    return c
+    return np.abs(c)
 
 
 def gauss_filter(dat, bin_freq, window=300, sigma=100):

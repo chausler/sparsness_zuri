@@ -13,7 +13,7 @@ from data_utils.utils import do_thresh_corr, corr_trial_to_mean
 # Sub directory of the figure path to put the plots in
 
 exp_types = ['FS', 'PYR', 'SOM']
-groups = ['R^2: Trial to Mean', 'Avg Activation', 'R^2: Trial Types']
+groups = ['Corr: Trial to Mean', 'Avg Spikes Per Bin', 'Corr: Stim Types']
 colors = ['r', 'b', 'g', 'y', 'c', 'm']
 headers = ['CellId', 'XCorr Center', 'XCorr Whole', 'XCorr Surround',
                        'Avg Center', 'Avg Whole', 'Avg Surround',
@@ -61,19 +61,19 @@ for randomise in [None, 'generated', 'random']:
                 edge = d['edge']
                 mn_c = psth_c.mean(0)
                 std_c = np.std(psth_c, 0)
-                xcorr_c = corr_trial_to_mean(psth_c, mn_c)
+                xcorr_c = corr_trial_to_mean(d['psth_c_raw'])
                 avg_c = d['psth_c_raw'].ravel().mean()
                 vals.append(xcorr_c)
                 mn_w = psth_w.mean(0)
                 std_w = np.std(psth_w, 0)
-                xcorr_w = corr_trial_to_mean(psth_w, mn_w)
+                xcorr_w = corr_trial_to_mean(d['psth_w_raw'])
                 avg_w = d['psth_w_raw'].ravel().mean()
                 vals.append(xcorr_w)
                 mx = np.maximum(mn_c.max(), mn_w.max())
                 if psth_s is not None:
                     mn_s = psth_s.mean(0)
                     std_s = np.std(psth_s, 0)
-                    xcorr_s = corr_trial_to_mean(psth_s, mn_s)
+                    xcorr_s = corr_trial_to_mean(d['psth_s_raw'])
                     avg_s = d['psth_s_raw'].ravel().mean()
                     vals.append(xcorr_s)
                     mx = np.maximum(mx, mn_s.max())
@@ -330,7 +330,7 @@ for randomise in [None, 'generated', 'random']:
             plt.xticks(xvals, xlbls, rotation='vertical')
             plt.xlim(0, offset)
             plt.ylim(0, 1.15)
-            plt.subplots_adjust(left=0.05, bottom=0.21, right=0.98, top=0.98,
+            plt.subplots_adjust(left=0.05, bottom=0.25, right=0.98, top=0.98,
                        wspace=0.3, hspace=0.34)
 
             fname = '%s%s' % (f_path, 'initial_summary')

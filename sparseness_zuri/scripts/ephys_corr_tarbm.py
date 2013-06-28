@@ -11,7 +11,7 @@ from data_utils.load_ephys import load_EphysData
 from data_utils.utils import corr_trial_to_mean, corr_trial_to_trial, do_thresh_corr
 import os
 
-stim_type = 'psth_w_shift'
+stim_type = 'psth_c_shift'
 if os.path.exists('mask_data_complete_%s.npy' % stim_type):
     patches = np.load('mask_data_complete_%s.npy' % stim_type)
 else:
@@ -57,7 +57,7 @@ for exp_type in patches.keys():
                         patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['crr_mn'] = crr_mn
                         patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['crr_mn_r2'] = crr_mn_r2
                         patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['cell_crr'] = cell_crr
-                        if (crr > 0.01 and crr >= cell_crr) or crr_mn > 0.1:
+                        if (crr > 0.2 and crr >= cell_crr) or crr_mn > 0.3:
                             print '%s %s %s %s %s: cell: %d, corr: %.3f, pred corr: %.3f, crr mn: %.3f' % (
                                             exp_type, cell_id, rbm_type,
                                             act_type, shift, cell, cell_crr, crr, crr_mn)

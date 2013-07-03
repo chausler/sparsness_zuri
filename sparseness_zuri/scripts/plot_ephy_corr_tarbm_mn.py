@@ -17,9 +17,10 @@ crr_types = ['crr', 'crr_mn', 'cell_crr']
 fig_path = startup.fig_path + 'Sparseness/DBN_preds/'
 if not os.path.exists(fig_path + '/cells/'):
     os.makedirs(fig_path + '/cells/')
-
+corr_type = 'crr_mn_r2'
 new_res = {}
 mx = 0 
+shifts = np.arange(-10, 2)
 for exp_type in patches.keys():
     e = load_EphysData(exp_type)
     for cell_id in patches[exp_type].keys():
@@ -36,7 +37,7 @@ for exp_type in patches.keys():
                 cell_max = 0
                 cell_max_id = None
                 cell_max_shift = None
-                for shift in patches[exp_type][cell_id]['corrs'][rbm_type][act_type]:
+                for shift in shifts:
                     if shift not in new_res[rbm_type][act_type][exp_type]:
                         new_res[rbm_type][act_type][exp_type][shift] = []
                     dt = dat[shift]
@@ -44,7 +45,7 @@ for exp_type in patches.keys():
                     dt = dt[:, strt:]
                     cell_shift_max = 0
                     for cell in patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift]:
-                        crr_mn = patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['crr_mn']
+                        crr_mn = patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell][corr_type]
                         crr = patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['crr']
                         cell_crr = patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['cell_crr']
                         active = (pred[cell].max() > (pred[cell].mean() + 2 * np.std(pred[cell])))
@@ -62,7 +63,7 @@ for exp_type in patches.keys():
                     new_res[rbm_type][act_type][exp_type][shift].append(cell_max)
 
                 if cell_max_id is not None and cell_max > 0.3:
-                    crr_mn = patches[exp_type][cell_id]['corrs'][rbm_type][act_type][cell_max_shift][cell_max_id]['crr_mn']
+                    crr_mn = patches[exp_type][cell_id]['corrs'][rbm_type][act_type][cell_max_shift][cell_max_id][corr_type]
                     label = 'exp cell: %s, shift: %s, dbn cell: %d, crr mn: %.3f' % (
                                     cell_id, shift, cell, crr_mn)
                     fname = '%s_%s_%s_%s_%s' % (
@@ -100,12 +101,12 @@ for rbm_type in new_res:
     fig.set_facecolor('white')
     plt.suptitle('%s' % (rbm_type))
     rows = len(exp_type) * len(new_res[rbm_type])
-    cols = 16
+    cols = len(shifts)
     cnt = 1
     axes = []
     for act_type in new_res[rbm_type]:
         for e, exp_type in enumerate(sorted(new_res[rbm_type][act_type])):
-                for s, shift in enumerate(sorted(new_res[rbm_type][act_type][exp_type])):
+                for s, shift in enumerate(shifts):
                     vals = np.array(new_res[rbm_type][act_type][exp_type][shift])
                     print rbm_type, act_type, exp_type, shift, vals.mean()
                     ax = plt.subplot(rows, cols, cnt)

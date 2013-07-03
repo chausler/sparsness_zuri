@@ -152,12 +152,11 @@ for exp in exps:
         continue
     print 'Doing ', exp
     dat = load_PopData(exp)
-    dat_c = dat['dat_c']
+    dat_c = dat['dat_c'].mean(2)
     #dat_c = normalise_cell(dat_c)
-    dat_c = np.swapaxes(dat_c, 0, 2)
-    dat_w = dat['dat_w']
+    dat_w = dat['dat_w'].mean(2)
     #dat_w = normalise_cell(dat_w)
-    dat_w = np.swapaxes(dat_w, 0, 2)
+
     active = dat['active']
     d = np.where(active[:, 1])[0]
     lum_mask, con_mask, flow_mask, four_mask, four_mask_shape,\
@@ -167,18 +166,15 @@ for exp in exps:
             lum_whole, con_whole, flow_whole, four_whole, four_whole_shape,\
             freq_whole, orient_whole = load_parsed_movie_dat(exp, 'POP', 7)
     all_dat = {'Data': {'Centre': dat_c, 'Whole': dat_w}, 'Movie': {}}
-    #all_dat['Movie']['Contrast'] = con_mask
-    #all_dat['Movie']['Luminence'] = lum_mask
-    #all_dat['Movie']['Fourier'] = four_mask
+    all_dat['Movie']['Contrast'] = con_mask
+    all_dat['Movie']['Luminence'] = lum_mask
+    all_dat['Movie']['Fourier'] = four_mask
     all_dat['Movie']['Frequency'] = freq_mask
-    #all_dat['Movie']['Orientation'] = orient_mask
+    all_dat['Movie']['Orientation'] = orient_mask
 
     for d in all_dat['Data']:
         print d
         X = all_dat['Data'][d]
-#        for cell in xrange(XX.shape[2]):
-#            print 'Cell %d' % cell
-        #X = XX#[:, :, cell: cell + 1]
         for m in all_dat['Movie']:
             print m
             ys = all_dat['Movie'][m]
@@ -194,7 +190,10 @@ for exp in exps:
                 X = X[:, :samples]
                 y = np.tile(y, [X.shape[0], 1])
                 pred_trial = np.zeros([X.shape[0], y.shape[1]])
-                trls = np.ar ange(X.shape[0])
+                trls = np.arange(X.shape[0])
+                pred_time, coefs = CV_time(clf, X, y, folds=folds, clf_args=clf_args,
+                                 edges=[0, 0])
+                
                 for trl in trls:
                     regr = clf(**clf_args)
                     XX = X[trls != trl].reshape(-1, X.shape[2])

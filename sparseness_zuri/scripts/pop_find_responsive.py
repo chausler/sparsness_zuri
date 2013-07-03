@@ -7,7 +7,7 @@ import pylab as plt
 from plotting.utils import adjust_spines, do_box_plot, do_spot_scatter_plot
 from data_utils.load_pop import load_PopData, list_PopExps
 import os
-from data_utils.utils import do_thresh_corr, corr_trial_to_trial
+from data_utils.utils import do_thresh_corr, corr_trial_to_trial, average_corrs
 
 
 def responsive_shuffle_xcorr(cell, centre, whole):
@@ -23,9 +23,10 @@ def responsive_shuffle_xcorr(cell, centre, whole):
         shift_xcorr_w = corr_trial_to_trial(whole.T, shift)
         shuffles.append([shift_xcorr_c, shift_xcorr_w])
     shuffles = np.array(shuffles)
-    [shift_xcorr_c, shift_xcorr_w] = shuffles.mean(0)
+    shift_xcorr_c = average_corrs(shuffles[:, 0])
+    shift_xcorr_w = average_corrs(shuffles[:, 1])
     active = (xcorr_c > (shift_xcorr_c * thresh)
-              and xcorr_w > (shift_xcorr_w * thresh))
+              or xcorr_w > (shift_xcorr_w * thresh))
     vals = [cell, active, xcorr_c, xcorr_w, shift_xcorr_c, shift_xcorr_w]
     return vals
 
@@ -100,7 +101,7 @@ for exp_id in exps:
             cnt += 1
 
     all_res.append([exp_id, total, len(dat_c)])
-    print 'Total Active: %d, RF Cells: %d,  Active RF Cells: %d' % (total,
+    print 'Total Active: %d out of %d   ------ RF Cells: %d,  Active RF Cells: %d' % (total, dat_c.shape[0],
                                                             len(rf_cells), cnt)
     np.save(fname, res)
 

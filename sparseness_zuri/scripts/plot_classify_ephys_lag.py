@@ -3,6 +3,7 @@ import startup
 from plotting.utils import adjust_spines, do_box_plot, do_spot_scatter_plot, plot_mean_std
 import pylab as plt
 import numpy as np
+from data_utils.utils import average_corrs
 from plot_classify_ephys_sub import plot_cell_summary
 import scipy.stats
 randomise = None
@@ -16,9 +17,9 @@ colors = ['r', 'b', 'g']
 style = ['x', 'o', '<']
 exp_types = ['FS', 'SOM', 'PYR']
 crr_pred = 'crr_pred'
-shifts = np.arange(-10, 5)
-xaxis = np.arange(shifts.min(), shifts.max() + 1) / 30. * 1000.
-xaxis_time = np.arange(shifts.min(), shifts.max() + 1)
+shifts = np.arange(-9, 4)
+xaxis_time = np.arange(shifts.min(), shifts.max() + 1) / 30. * 1000.
+
 
 for exp_type in exp_types:
     fig_path = startup.fig_path + 'Sparseness/%s/pred/' % (exp_type)
@@ -106,7 +107,7 @@ for exp_type in exp_types:
             axs.append(plot_mean_std(xs, ys, stds, title, [a, b, cnt],
                                      legend=False, line='-o'))
             plt.xlim(shifts.min() - 0.5, shifts.max() + 0.5)
-            plt.xticks(xaxis)
+            plt.xticks(xaxis_time)
             plt.figure(fig2.number)
             plot_mean_std(xs, sigs, np.zeros_like(sigs), title, [a, b, cnt],
                           legend=False, line='-o')
@@ -163,11 +164,11 @@ for exp_type in exp_types:
             plt.ylabel('# correlated responses')
         crr_axs.append(plt.subplot(2, 2, cnt))
         for cr, shift in zip(crrs, shifts):
-            do_spot_scatter_plot(cr, shift, 'k', 0.4, False)
+            do_spot_scatter_plot(cr, shift, 'k', 0.4, False, mean_adjust=True)
         #do_box_plot(crrs, shifts, 'k', np.ones_like(shifts) * 0.5)
         cnt -= 1
         if i == 0:
-            plt.ylabel('mean r^2 of responders')
+            plt.ylabel('mean corr of responders')
         plt.xlabel('Shift in Frames')
     adjuster = np.array([-0.5, 0.5])
     for ax in cnt_axs:
@@ -213,17 +214,18 @@ for exp_type in exp_types:
             shift_max_mn[exp_type][k] = []
         ax = plt.subplot(1, 2, i + 1)
         plt.title(k)
-        for s in shifts:
+        for s, t in zip(shifts, xaxis_time):
             vals = np.array(shift_max[k][s])
-            shift_max_mn[exp_type][k].append(vals.mean())
-            do_spot_scatter_plot(vals, s, 'k', 0.5, True)
+            # fisher z transform            
+            shift_max_mn[exp_type][k].append(average_corrs(vals))
+            do_spot_scatter_plot(vals, t, 'k', 25, True, mean_adjust=True)
         #do_box_plot(crrs, shifts, 'k', np.ones_like(shifts) * 0.5)
         if i == 0:
-            plt.ylabel('mean r^2 of responders')
+            plt.ylabel('mean corr of responders')
         plt.xlabel('Shift in Frames')
-        adjuster = np.array([-0.5, 0.5])
+        adjuster = np.array([-10, 10])
         ax.set_ylim(-0.01, 1)
-        ax.set_xlim(np.array([shifts.min(), shifts.max()]) + adjuster)
+        ax.set_xlim(np.array([xaxis_time.min(), xaxis_time.max()]) + adjuster)
     plt.subplots_adjust(left=0.06, bottom=0.05, right=0.97, top=0.95,
                        wspace=0.23, hspace=0.1)
     fig4.savefig(fig_path + '%.2f_%s_shift_max.eps' % (filt, exp_type))
@@ -271,7 +273,7 @@ for exp_type in exp_types:
                     cell_max_time[exp_type][k][:, 1],
                     c='r', marker='x')
     #                c=colors[i], marker=style[i])
-        plt.ylabel('mean r^2 of responders')
+        plt.ylabel('corr of responders')
         if ax.is_last_row():
             plt.xlabel('Shift in Frames')
             adjust_spines(ax, ['bottom', 'left'])
@@ -340,7 +342,7 @@ for exp_type in exp_types:
                     print cmb
                     do_spot_scatter_plot(
                         np.array(cell_max_type[exp_type][k][cmb]), j, 'k',
-                        0.4, False)
+                        0.4, False, mean_adjust=True)
         if ax.is_last_row():
             adjust_spines(ax, ['bottom', 'left'])
             plt.xlabel('Classifier Type')
@@ -356,7 +358,7 @@ for exp_type in exp_types:
         if ax.is_first_col():
             ax.text(-0.12, 0.5, exp_type, transform=ax.transAxes,
                     rotation='vertical', va='center', ha='center')
-            plt.ylabel('mean r^2 of responders')
+            plt.ylabel('mean corr of responders')
 plt.subplots_adjust(left=0.06, bottom=0.15, right=0.97, top=0.95,
                    wspace=0.23, hspace=0.23)
 fig_path = startup.fig_path + 'Sparseness/summary/'
@@ -390,7 +392,7 @@ for exp_type in exp_types:
         xlbls.append(k)
         offset += 1
     offset += 2
-plt.ylabel('r^2 of Responders')
+plt.ylabel('corr of Responders')
 plt.ylim(-0.01, 1)
 plt.xticks(xvals, xlbls, rotation='vertical')
 plt.subplots_adjust(left=0.06, bottom=0.16, right=0.97, top=0.95,
@@ -402,7 +404,7 @@ fig8.savefig(fig_path + '%.2f_pred_summary.png' % (filt))
 plt.close(fig8)
 
 
-fig9 = plt.figure(figsize=(3.5, 4))
+fig9 = plt.figure(figsize=(3.5, 6))
 fig9.set_facecolor('white')
 cnt = 1
 shifts = np.array(shift_max.values()[0].keys(), dtype=np.int)
@@ -423,7 +425,7 @@ for i, exp_type in enumerate(exp_types):
     plt.hold(True)
     for j, k in enumerate(sorted(shift_max_mn[exp_type])):
         vals = np.array(shift_max_mn[exp_type][k])
-        plt.plot(xaxis, vals, '-o', c=colors[j], label=k[:k.find('_')])
+        plt.plot(xaxis_time, vals, '-o', c=colors[j], label=k[:k.find('_')])
         if vals.max() > ylim[1]:
             ylim[1] = vals.max()
         if vals.min() < ylim[0]:
@@ -443,7 +445,7 @@ for i, exp_type in enumerate(exp_types):
                 transform=ax.transAxes,
                 fontsize=10, fontweight='bold')
     adjuster = np.array([-10, 10])
-    ax.set_xlim(np.array([xaxis.min(), xaxis.max()]) + adjuster)
+    ax.set_xlim(np.array([xaxis_time.min(), xaxis_time.max()]) + adjuster)
 
 ylim[0] = np.floor(ylim[0] * 10) / 10.
 ylim[1] = np.ceil(ylim[1] * 10) / 10.

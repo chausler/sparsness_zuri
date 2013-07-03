@@ -80,6 +80,14 @@ def filter(dat, bin_freq, type='exp', window=300, prm=0.2):
     return fr, len(kern) / 2
 
 
+def average_corrs(corrs, axis=0):
+    """
+    Silver, N. Clayton, and William P. Dunlap. 
+    "Averaging correlation coefficients: Should Fisher's z transformation be used?."
+    Journal of Applied Psychology 72.1 (1987): 146.
+    """
+    return np.tanh(np.arctanh(np.array(corrs)).mean(axis))
+
 def corr_trial_to_trial(trials, shift=0):
 
     samples = trials.shape[1]
@@ -96,7 +104,7 @@ def corr_trial_to_trial(trials, shift=0):
     for i, j in combinations(range(len(trials)), 2):
         xcorr.append(do_thresh_corr(trials[i, norm_idx],
                                     trials[j, shift_idx]))
-    crr = np.array(xcorr).mean()
+    crr = average_corrs(xcorr)
     return crr
 
 
@@ -109,8 +117,25 @@ def corr_trial_to_mean(trials, mn=None, edge=None):
             xcorr.append(do_thresh_corr(t, mn))
         else:
             xcorr.append(do_thresh_corr(t[edge: -edge], mn[edge: -edge]))
-    crr = np.array(xcorr).mean()
+    crr = average_corrs(xcorr)
     return crr
+
+
+def corr_trial_to_mean_multi(dat, mn=None, edge=None):
+    if mn is None:
+        mn = dat.mean(2)
+    xcorr = []
+    for i in range(len(dat)):
+        xcorr_cell = []
+        for t in dat[i].T:
+            if edge is None:
+                xcorr_cell.append(do_thresh_corr(t, mn[i]))
+            else:
+                xcorr_cell.append(do_thresh_corr(t[edge: -edge],
+                                                 mn[i, edge: -edge]))
+        xcorr.append(average_corrs(xcorr_cell))
+    crr = average_corrs(xcorr)
+    return crr, np.array(xcorr)
 
 
 def pairwise_corr(dat, corr_type=None):
@@ -132,17 +157,27 @@ def normalise_cell(dat):
     return dat
 
 
-def downsample(dat, orig_time, dwn_time):
-    f = interp1d(orig_time, dat, kind='cubic')
-    return f(dwn_time)
+def downsample(dat, orig_time, dwn_time, is_complex=False):
+    if is_complex:
+        f = interp1d(orig_time, dat.real, kind='cubic')
+        rl = f(dwn_time)
+        f = interp1d(orig_time, dat.imag, kind='cubic')
+        img = f(dwn_time)        
+        dat = rl + img * 1j        
+    else:
+        f = interp1d(orig_time, dat, kind='cubic')
+        dat = f(dwn_time)
+    return dat
 
-def downsample_multi_dim(dat, orig_time, dwn_time):
+
+def downsample_multi_dim(dat, orig_time, dwn_time, is_complex=False):
     dims = dat.shape
     new_dat = np.zeros([len(dwn_time), np.array(dims[1:]).prod()])
     dat = dat.reshape(len(orig_time), -1)
     for i in xrange(dat.shape[1]):
         print 'downsample dim %d of %d' % (i, dat.shape[1])
-        new_dat[:, i] = downsample(dat[:, i], orig_time, dwn_time)
+        new_dat[:, i] = downsample(dat[:, i], orig_time, dwn_time,
+                                   is_complex=is_complex)
     new_dim = [len(dwn_time)] + list(dims[1:])
     new_dat = np.reshape(new_dat, new_dim)
     return new_dat

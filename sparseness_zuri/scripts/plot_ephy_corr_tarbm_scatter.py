@@ -14,7 +14,7 @@ from data_utils.load_ephys import load_EphysData
 fig_path = startup.fig_path + 'Sparseness/DBN_preds/'
 if not os.path.exists(fig_path):
     os.makedirs(fig_path)
-
+shifts = np.arange(-10, 3)
 new_res = np.load('mask_data_summary.npy')
 new_res = new_res.item()
 exp_types = ['FS', 'SOM', 'PYR']
@@ -47,7 +47,7 @@ for rbm_type in new_res:
                 ttl = '%s %s' % (exp_type, stim_type)
                 plt.title(ttl)
                 plt.hold(True)
-                for s, shift in enumerate(sorted(new_res[rbm_type][act_type][exp_type][stim_type])):
+                for s, shift in enumerate(shifts):
                     vals = np.array(new_res[rbm_type][act_type][exp_type][stim_type][shift])
                     vals = np.array([vals[vals > 0.].mean()])
                     if vals.max() > mx:
@@ -56,7 +56,7 @@ for rbm_type in new_res:
                 cnt += 1
             for ax in axes:
                 ax.set_ylim(-0.01, mx + (mx * 0.1))
-                ax.set_xlim(-15.5, 0.5)
+                ax.set_xlim(shifts.min() - 0.5, shifts.max() + 0.5)
         plt.subplots_adjust(left=0.05, bottom=0.05, right=0.99, top=0.93, wspace=0.25, hspace=0.25)
         fig.savefig(fig_path + 'scatter_%s_%s.eps' % (rbm_type, act_type))
         fig.savefig(fig_path + 'scatter_%s_%s.png' % (rbm_type, act_type))

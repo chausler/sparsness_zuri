@@ -10,7 +10,7 @@ sys.path.append('..')
 from startup import *
 import numpy as np
 import pylab as plt
-from data_utils.utils import pairwise_corr, do_thresh_corr
+from data_utils.utils import pairwise_corr, do_thresh_corr, average_corrs
 from plotting.utils import adjust_spines, do_box_plot, do_spot_scatter_plot
 from data_utils.load_pop import load_PopData, list_PopExps
 import os
@@ -19,12 +19,15 @@ import os
 def plot_corrs(c_vals, w_vals, n_cells, header, fname):
     fig = plt.figure(figsize=(14, 8))
     fig.set_facecolor('white')
-    c_vals = c_vals.mean(0)
-    w_vals = w_vals.mean(0)
+    c_vals = average_corrs(c_vals)
+    w_vals = average_corrs(w_vals)
+    c_vals_mn = average_corrs(c_vals)
+    w_vals_mn = average_corrs(w_vals)
+
     ax = plt.subplot(311)
     plt.hold(True)
     plt.plot(c_vals.T, '0.8')
-    plt.plot(c_vals.mean(0), '0.4', linewidth=2)
+    plt.plot(c_vals_mn, '0.4', linewidth=2)
     plt.xlim(0, c_vals.shape[1])
     adjust_spines(ax, ['bottom', 'left'])
     plt.title('Masked')
@@ -33,7 +36,7 @@ def plot_corrs(c_vals, w_vals, n_cells, header, fname):
     ax = plt.subplot(312)
     plt.hold(True)
     plt.plot(w_vals.T, '0.8')
-    plt.plot(w_vals.mean(0), '0.4', linewidth=2)
+    plt.plot(w_vals_mn, '0.4', linewidth=2)
     plt.xlim(0, w_vals.shape[1])
     adjust_spines(ax, ['bottom', 'left'])
     plt.title('Whole Field')
@@ -41,9 +44,9 @@ def plot_corrs(c_vals, w_vals, n_cells, header, fname):
 
     ax = plt.subplot(313)
     plt.hold(True)
-    plt.plot(w_vals.mean(0), 'g', linewidth=2, label='Whole')
-    plt.plot(c_vals.mean(0), 'k', linewidth=2, label='Centre')
-    crr = do_thresh_corr(w_vals.mean(0), c_vals.mean(0))
+    plt.plot(w_vals_mn, 'g', linewidth=2, label='Whole')
+    plt.plot(c_vals_mn, 'k', linewidth=2, label='Centre')
+    crr = do_thresh_corr(w_vals_mn, c_vals_mn)
     leg = plt.legend(ncol=2)
     leg.draw_frame(False)
     plt.xlim(0, c_vals.shape[1])
@@ -64,7 +67,7 @@ def plot_corrs(c_vals, w_vals, n_cells, header, fname):
     print fname
     print n_cells
     print '\tMean\tMax'
-    print 'Centre:\t%.3f\t%.3f' % (c_vals.mean(), c_vals.max())
+    print 'Centre:\t%.3f\t%.3f' % (c_vals_mn.mean(), c_vals.max())
     print 'Whole:\t%.3f\t%.3f' % (w_vals.mean(), w_vals.max())
     print
 
@@ -91,7 +94,7 @@ for fname in files:
     print typ
     c_crr = []
     w_crr = []
-
+    print 'try to predict correlation from movie features, try to predict one from another, try to predict movie features from population'
     for i in range(corr_c.shape[1]):
         for j in range(corr_c.shape[1]):
             if i < j:

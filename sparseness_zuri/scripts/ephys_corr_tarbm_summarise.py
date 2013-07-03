@@ -13,7 +13,6 @@ crr_types = ['crr', 'crr_mn', 'cell_crr']
 fig_path = startup.fig_path + 'Sparseness/DBN_preds/'
 if not os.path.exists(fig_path):
     os.makedirs(fig_path)
-
 new_res = {}
 mx = 0
 for stim_type in stim_types:
@@ -42,7 +41,7 @@ for stim_type in stim_types:
                         dt = dt[:, strt:]
                         cell_max = 0
                         for cell in patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift]:
-                            crr_mn = patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['crr_mn']
+                            crr_mn = patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['crr_mn_r2']
                             crr = patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['crr']
                             cell_crr = patches[exp_type][cell_id]['corrs'][rbm_type][act_type][shift][cell]['cell_crr']
                             active = (pred[cell].max() > (pred[cell].mean() + 2 * np.std(pred[cell])))
@@ -53,19 +52,19 @@ for stim_type in stim_types:
                                                     exp_type, cell_id, rbm_type,
                                                     act_type, shift, cell, cell_crr, crr, crr_mn)
                                     print label
-                                    plt.figure(figsize=(12, 8))
-                                    plt.title(label)
-                                    plt.hold(True)
-                                    #plt.plot(dt.T, '0.7')
-                                    mn_cell = dt.mean(0)
-                                    mn_cell = (mn_cell - mn_cell.mean()) / np.std(mn_cell)
-                                    mn_pred = (pred[cell] - pred[cell].mean()) / np.std(pred[cell])
-                                    plt.plot(mn_cell, 'k', lw=2)
-                                    print pred[cell], active
-                                    plt.plot(mn_pred, 'r')
-                                    #plt.ylim([-0.1, 1])
-                                    plt.show()
-    
+#                                    fig = plt.figure(figsize=(12, 8))
+#                                    plt.title(label)
+#                                    plt.hold(True)
+#                                    #plt.plot(dt.T, '0.7')
+#                                    mn_cell = dt.mean(0)
+#                                    mn_cell = (mn_cell - mn_cell.mean()) / np.std(mn_cell)
+#                                    mn_pred = (pred[cell] - pred[cell].mean()) / np.std(pred[cell])
+#                                    plt.plot(mn_cell, 'k', lw=2)
+#                                    plt.plot(mn_pred, 'r')
+#                                    #plt.ylim([-0.1, 1])
+#                                    plt.show()
+#                                    #plt.close(fig)
+
                                 if crr_mn > mx:
                                     mx = crr_mn
                                 if crr_mn > cell_max:

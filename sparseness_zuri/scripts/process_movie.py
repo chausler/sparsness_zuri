@@ -573,7 +573,7 @@ def process_movie_pop(exp_type='POP'):
 
         four_mask, freq_mask, orient_mask = get_fourier2D(masked)
         four_mask = downsample_multi_dim(four_mask, mov_time,
-                               exp_time)[np.newaxis, :, :, :]
+                               exp_time, is_complex=True)[np.newaxis, :, :, :]
         freq_mask = downsample_multi_dim(freq_mask, mov_time,
                                exp_time)[np.newaxis, :, :]
         orient_mask = downsample_multi_dim(orient_mask, mov_time,
@@ -597,17 +597,17 @@ def process_movie_pop(exp_type='POP'):
 #        freq_surr = np.array(freq_surr)
 #        orient_surr = np.array(orient_surr)
 
-        lum_whole = downsample(get_luminance(movie), mov_time,
-                               exp_time)[np.newaxis, :]
-        con_whole = downsample(get_contrast(movie), mov_time,
-                               exp_time)[np.newaxis, :]
-        four_whole, freq_whole, orient_whole = get_fourier2D(movie)
-        four_whole = downsample_multi_dim(four_whole, mov_time,
-                               exp_time)[np.newaxis, :, :, :]
-        freq_whole = downsample_multi_dim(freq_whole, mov_time,
-                               exp_time)[np.newaxis, :, :]
-        orient_whole = downsample_multi_dim(orient_whole, mov_time,
-                               exp_time)[np.newaxis, :, :]
+#        lum_whole = downsample(get_luminance(movie), mov_time,
+#                               exp_time)[np.newaxis, :]
+#        con_whole = downsample(get_contrast(movie), mov_time,
+#                               exp_time)[np.newaxis, :]
+#        four_whole, freq_whole, orient_whole = get_fourier2D(movie)
+#        four_whole = downsample_multi_dim(four_whole, mov_time,
+#                               exp_time)[np.newaxis, :, :, :]
+#        freq_whole = downsample_multi_dim(freq_whole, mov_time,
+#                               exp_time)[np.newaxis, :, :]
+#        orient_whole = downsample_multi_dim(orient_whole, mov_time,
+#                               exp_time)[np.newaxis, :, :]
         if flow_found:
             flow_whole, flow_mask, flow_surr = get_flow(flow,
                                 e['maskSizePixel'], e['maskLocationPixel'])
@@ -621,10 +621,11 @@ def process_movie_pop(exp_type='POP'):
                    four_mask=four_mask,
                    freq_mask=freq_mask, orient_mask=orient_mask,
                     masked=masked,
-                   lum_whole=lum_whole, con_whole=con_whole,
+                   #lum_whole=lum_whole, con_whole=con_whole,
                    flow_whole=flow_whole,
-                   four_whole=four_whole, freq_whole=freq_whole,
-                   orient_whole=orient_whole, movie=movie,
+                   #four_whole=four_whole, freq_whole=freq_whole,
+                   #orient_whole=orient_whole,
+                   movie=movie,
                    mov_frames=mov_frames, exp_samples=exp_samples
 #                   lum_surr=lum_surr, con_surr=con_surr, flow_surr=flow_surr,
 #                   four_surr=four_surr, freq_surr=freq_surr,
@@ -636,10 +637,11 @@ def process_movie_pop(exp_type='POP'):
             'flow_mask': flow_mask, 'four_mask': four_mask,
             'freq_mask': freq_mask, 'orient_mask': orient_mask,
             'masked': masked,
-            'lum_whole': lum_whole, 'con_whole': con_whole,
-            'flow_whole': flow_whole, 'four_whole': four_whole,
-            'freq_whole': freq_whole,
-            'orient_whole': orient_whole, 'movie': movie,
+#            'lum_whole': lum_whole, 'con_whole': con_whole,
+#            'flow_whole': flow_whole, 'four_whole': four_whole,
+#            'freq_whole': freq_whole,
+#            'orient_whole': orient_whole,
+            'movie': movie,
             'mov_frames': mov_frames, 'exp_samples': exp_samples
 #            'lum_surr': lum_surr, 'con_surr': con_surr, 'flow_surr': flow_surr,
 #            'four_surr': four_surr, 'freq_surr': freq_surr,
@@ -658,9 +660,9 @@ def process_movie_pop(exp_type='POP'):
 
 if __name__ == "__main__":
     exp_type = 'POP'
-    process_movie_ephys('FS')
-    process_movie_ephys('SOM')
-    process_movie_ephys('PYR')
-    
-    #process_movie_pop()
+#    process_movie_ephys('FS')
+#    process_movie_ephys('SOM')
+#    process_movie_ephys('PYR')
+#    
+    process_movie_pop()
 #        animate_matrix_multi([masked, four_mask])

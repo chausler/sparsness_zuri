@@ -4,7 +4,7 @@ from startup import *
 import numpy as np
 import scipy.stats
 import pylab as plt
-from plotting.utils import adjust_spines, do_box_plot, do_spot_scatter_plot
+from plotting.utils import adjust_spines, do_box_plot, do_spot_scatter_plot, do_point_line_plot
 from data_utils.load_ephys import load_EphysData
 import os
 from data_utils.utils import do_thresh_corr, corr_trial_to_mean
@@ -20,7 +20,7 @@ headers = ['CellId', 'XCorr Center', 'XCorr Whole', 'XCorr Surround',
                        'XCorr C v W', 'XCorr C v S', 'XCorr S v W']
 filters = [0.1]
 norm = True
-for randomise in [None, 'generated', 'random']:
+for randomise in [None]:  # , 'generated', 'random']:
     for exp_type in exp_types:
         for filt in filters:
             if randomise is None:
@@ -296,39 +296,30 @@ for randomise in [None, 'generated', 'random']:
             adjust_spines(ax, ['bottom', 'left'])
             xvals = []
             xlbls = []
-            offset = -1
+            offset = 1
             divider = 3
-            for i in range(csv_vals.shape[1]):
-                col = colors[i % divider]
-                if (i % divider == 0):
-                    offset += 2
-                    plt.text(offset, 1, groups[i / divider])
+            for i in range(len(groups)):
+                base_ind = i * divider
+                plt.text(offset, 1, groups[i])
+                mean_adjust = (i != 1)
+                dt = csv_vals[:, base_ind: base_ind + divider]
+                offsets = np.arange(dt.shape[1]) + offset
+                print dt.shape, offsets
+                do_point_line_plot(dt, offsets, width=0.7,
+                                   mean_adjust=mean_adjust,
+                                   alpha=0.5,
+                                   c=colors)
 
-#                    do_box_plot(csv_vals[:, i], np.array([offset]), col,
-#                                widths=[0.7])
-                mean_adjust = False if i / divider == 1 else True
-                do_spot_scatter_plot(csv_vals[:, i], offset, col,
-                            width=0.7, mean_adjust=mean_adjust)
-                inds = np.arange(divider)
-                inds = inds[inds != i % divider]
-                base_ind = (i / divider) * divider
-                p_offset = -0.2
-                if csv_vals[:, i].sum() > 0:
-                    for ind in inds:
-                        if csv_vals[:, base_ind + ind].sum() == 0:
-                            continue
-                        stat, p = scipy.stats.ttest_ind(csv_vals[:, i],
-                                                csv_vals[:, base_ind + ind])
-                        if p < 0.05:
-                            plt.scatter(offset + p_offset, 0.95, c=colors[ind],
-                                        edgecolor=colors[ind],
-                                        marker='*')
-                            p_offset *= -1
-                xvals.append(offset)
-                xlbls.append(headers[i + 1])
-                offset += 1
+#                do_spot_scatter_plot(csv_vals[:, i], offset, col,
+#                            width=0.7, mean_adjust=mean_adjust)
+
+                
+                xvals += offsets.tolist()
+                xlbls += headers[1 + base_ind: base_ind + divider + 1]
+                offset += divider + 1
+
             plt.xticks(xvals, xlbls, rotation='vertical')
-            plt.xlim(0, offset)
+            #plt.xlim(0, offset)
             plt.ylim(0, 1.15)
             plt.subplots_adjust(left=0.05, bottom=0.25, right=0.98, top=0.98,
                        wspace=0.3, hspace=0.34)

@@ -165,16 +165,14 @@ if __name__ == "__main__":
   
 #    121122 [12.1, -8.1]
 #    121127 [8.4, 2.4]
-    load_PopData('120921')
     exps = list_PopExps()
-    for exp in exps:
-        print
+    for exp in exps:        
         print exp
-        d = load_PopData(exp)
-
-        rf = d['rf_cells']
-        act = d['active'][:,1]
-        act = np.where(act)[0]
-        print rf
-        print act
-        print d['dat_c'].shape[0], len(rf), len(act)
+#        d = load_PopData(exp)
+#
+#        rf = d['rf_cells']
+#        act = d['active'][:,1]
+#        act = np.where(act)[0]
+#        print rf
+#        print act
+#        print d['dat_c'].shape[0], len(rf), len(act)

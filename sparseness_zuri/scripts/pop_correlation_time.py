@@ -9,7 +9,7 @@ sys.path.append('..')
 from startup import *
 import numpy as np
 import pylab as plt
-from data_utils.utils import pairwise_corr
+from data_utils.utils import pairwise_corr, average_corrs
 from plotting.utils import adjust_spines, do_box_plot, do_spot_scatter_plot
 from data_utils.load_pop import load_PopData, list_PopExps
 import os

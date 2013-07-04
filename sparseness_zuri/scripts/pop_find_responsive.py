@@ -81,10 +81,10 @@ for exp_id in exps:
     except:
         continue
     rf_cells = dat['rf_cells']
-    dat_c = dat['dat_c']
-    dat_w = dat['dat_w']
-    bs_c = dat['bs_c']
-    bs_w = dat['bs_w']
+    dat_c = dat['dat_raw_c']
+    dat_w = dat['dat_raw_w']
+    bs_c = dat['bs_raw_c']
+    bs_w = dat['bs_raw_w']
 
 
     res = []

@@ -60,6 +60,17 @@ def baseline_filt(dat, baseline_samples, flatten=False):
     return np.array(all_cell), np.array(all_bs)
 
 
+def baseline(dat, baseline_samples, flatten=False):
+    all_bs = []
+    all_cell = []
+    for cell in range(len(dat)):
+        all_cell.append(dat[cell][baseline_samples:])
+        all_bs.append(np.array([dat[cell][:baseline_samples].mean(0),
+                       np.std(dat[cell][:baseline_samples], 0)]).T)
+    return np.array(all_cell), np.array(all_bs)
+
+
+
 def list_PopExps():
     pth = extern_data_path + 'Sparseness/PopulationData/Population/'
     return sorted(os.walk(pth).next()[1])
@@ -98,6 +109,8 @@ def load_PopData(exp_id, only_active=False):
         dat_c = dat_c[idx == 1]
         dat_w = dat_w[idx == 1]
 
+    dat_raw_c, bs_raw_c = baseline(dat_c, baseline_samples)
+    dat_raw_w, bs_raw_w = baseline(dat_w, baseline_samples)
     dat_c, bs_c = baseline_filt(dat_c, baseline_samples)
     dat_w, bs_w = baseline_filt(dat_w, baseline_samples)
 
@@ -139,11 +152,13 @@ def load_PopData(exp_id, only_active=False):
     maskLocationPixel = maskLocationDeg * vfPixelsPerDegree / scale
     maskLocationPixel += (adjustedMovResolution / 2.)
     maskLocationPixel = maskLocationPixel.astype(np.int)
-    
+
     ret_dat = {'exp_id': exp_id,
                         'scan_freq': scan_freq,
                         'dat_c': dat_c, 'dat_w': dat_w,
                         'bs_c': bs_c, 'bs_w': bs_w,
+                        'dat_raw_c': dat_raw_c, 'dat_raw_w': dat_raw_w,
+                        'bs_raw_c': bs_raw_c, 'bs_raw_w': bs_raw_w,
                         'active': active,
                         'maskLocationDeg': maskLocationDeg,
                         'maskSizeDeg': maskSizeDeg,

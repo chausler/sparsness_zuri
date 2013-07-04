@@ -1,6 +1,6 @@
 import matplotlib
 # force plots to file. no display. comment out to use plt.show()
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import Image
 import numpy.fft as fft
 import numpy as np
@@ -494,7 +494,6 @@ def process_movie_ephys(exp_type='SOM'):
     print 'Successful: ', success_count
 
 
-
 def process_movie_pop(exp_type='POP'):
     failed_count = 0
     success_count = 0
@@ -510,13 +509,13 @@ def process_movie_pop(exp_type='POP'):
         flow_fname = exp_id + '_flow.mat'
         e = load_PopData(exp_id)
         if os.path.exists(dat_path + target_fname):
-        #    print 'already exists, skipping ', target_fname
+            print 'already exists, skipping ', target_fname
             success_count += 1
-#            continue
+            continue
         flow_found = True
         if not os.path.exists(dat_path + flow_fname):
             flow_found = False
-#            print 'flow data missing ', flow_fname
+            print 'flow data missing ', flow_fname
 #            continue
 
         movie = scipy.io.loadmat(dat_path + e['movie'])
@@ -650,8 +649,8 @@ def process_movie_pop(exp_type='POP'):
 
         plot_movie(lum_mask, con_mask, flow_mask, four_mask, masked,
                    fig_path + exp_id + '_masked')
-        plot_movie(lum_whole, con_whole, flow_whole, four_whole, movie,
-                   fig_path + exp_id + '_whole')
+#        plot_movie(lum_whole, con_whole, flow_whole, four_whole, movie,
+#                   fig_path + exp_id + '_whole')
 #        plot_surround(lum_surr, con_surr, flow_surr, four_surr, surround,
 #                   fig_path + exp_id + '_surround')
     print 'Failed: ', failed_count

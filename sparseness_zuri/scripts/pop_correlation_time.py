@@ -15,17 +15,14 @@ from data_utils.load_pop import load_PopData, list_PopExps
 import os
 
 
-def trial_corr(trial, dat, win):
-    corrs = np.zeros([dat.shape[0], dat.shape[0], dat.shape[1] - win])
-    for t in xrange(dat.shape[1] - win):
-        corrs[:, :, t] = pairwise_corr(dat[:, t: t + win, trial])
-    return corrs
-
-
-def trial_corr_parallel(trial):
-    corrs = np.zeros([dat.shape[0], dat.shape[0], dat.shape[1] - win])
-    for t in xrange(dat.shape[1] - win):
-        corrs[:, :, t] = pairwise_corr(dat[:, t: t + win])
+def cell_corr(dat, win, trial=None):
+    corrs = np.zeros([dat.shape[0], dat.shape[0], dat.shape[1]])
+    for t in xrange(win, dat.shape[1]):
+        if len(dat.shape) > 2:
+            corrs[:, :, t] = pairwise_corr(dat[:, t - win / 2: t + win / 2 + 1,
+                                           trial])
+        else:
+            corrs[:, :, t] = pairwise_corr(dat[:, t - win / 2: t + win / 2 + 1])
     return corrs
 
 
@@ -34,9 +31,10 @@ def do_corrs(dat, win):
     trials = range(dat.shape[2])
     for t in trials:
         print 'trial %d' % t
-        val = trial_corr(t, dat, win)
+        val = cell_corr(dat, win, t)
         corrs.append(val)
-    return np.array(corrs)
+    mean_corr = mean_corr(dat.mean(2), win)
+    return np.array(corrs), mean_corr
 
 d_path = data_path + 'Sparseness/POP/time_corr/'
 if not os.path.exists(d_path):
@@ -55,7 +53,7 @@ for exp in exps:
     d = np.where(active[:, 1])[0]
     dat_c = dat['dat_c']
     dat_w = dat['dat_w']
-    corr_c = do_corrs(dat_c, corr_win)
-    corr_w = do_corrs(dat_w, corr_win)
+    trial_corr_c, mean_corr_c = do_corrs(dat_c, corr_win)
+    trial_corr_w, mean_corr_c = do_corrs(dat_w, corr_win)
     np.savez_compressed(fname, corr_c=corr_c, corr_w=corr_w)
 

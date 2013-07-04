@@ -18,7 +18,10 @@ def do_thresh_corr(x, y, threshold=0.05, corr_type='pearsonr', do_abs=True):
         return c
     if p > threshold or np.isnan(c):
         c = 0.
-    return np.abs(c)
+    if do_abs:
+        return np.abs(c)
+    else:
+        return c
 
 
 def gauss_filter(dat, bin_freq, window=300, sigma=100):

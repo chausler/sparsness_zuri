@@ -34,11 +34,16 @@ for exp in exps:
     dat = load_PopData(exp)
     active = dat['active']
     d = np.where(active[:, 1])[0]
+    print d
     res = []
     cell_idx = np.arange(dat['dat_c'].shape[0])
     crr_c = None
     crr_w = None
     for cell in cell_idx:
+        if cell in d:
+            print 'active'
+        else:
+            continue
         print cell
         cell_res = []
         for i, src in enumerate(['dat_c', 'dat_w']):
@@ -75,17 +80,25 @@ for exp in exps:
                 c.fit(X, y)
                 ys.append(yy)
                 preds.append(c.predict(XX))
-            crr = do_thresh_corr(np.array(ys).ravel(), np.array(preds).ravel())                
+            crr = do_thresh_corr(np.array(ys).ravel(), np.array(preds).ravel())
             cell_res.append(crr)
         res.append(cell_res)
     res = np.array(res)
     print res.shape
-    plt.figure()
+    plt.figure(figsize=(16, 8))
     plt.subplot(131)
     plt.scatter(res[:, 0], res[:, 1])
+    plt.xlabel('Pred Corr Centre')
+    plt.ylabel('Pred Corr Whole')
     plt.subplot(132)
-    plt.scatter(res[:, 0], crr_c)
+    plt.scatter(res[:, 0], crr_c[d])
+    plt.xlabel('Pred Corr Centre')
+    plt.ylabel('Trial Corr Centre')
     plt.subplot(133)
-    plt.scatter(res[:, 1], crr_w)
+    plt.scatter(res[:, 1], crr_w[d])
+    plt.xlabel('Pred Corr Whole')
+    plt.ylabel('Trial Corr Whole')
+    plt.subplots_adjust(left=0.07, bottom=0.05, right=0.95, top=0.9,
+                                wspace=0.2, hspace=0.35)
     plt.show()
         

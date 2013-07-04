@@ -18,6 +18,7 @@ clf_args={}
 from sklearn.linear_model import LassoCV
 from sklearn.cross_validation import KFold, LeaveOneOut
 from data_utils.utils import do_thresh_corr, normalise_cell
+from sklearn.preprocessing import normalize
 
 import itertools
 import os
@@ -45,9 +46,9 @@ def classify_time(cv):
     train = train[train < (len(train) - edges[1])]
     test = cv[1] 
     regr = clf(**clf_args)
-    XX = X[:, train].reshape(-1, X.shape[2])
+    XX = X[:, train].T
     yy = y[:, train].ravel()
-    Xt = X[:, test].reshape(-1, X.shape[2])
+    Xt = X[:, test].T
 
     regr.fit(XX, yy)
     coef = None
@@ -142,9 +143,9 @@ def CV_trial(clf, X, y, folds=20, clf_args={}, clf_fit_args={},
     return np.array(preds), np.array(coefs)
 
 
-filter = ['120425']
+filter = [] #'120425']
 
-folds = 10
+folds = 5
 exps = list_PopExps()
 for exp in exps:
     if len(filter) > 0 and exp not in filter:
@@ -153,9 +154,9 @@ for exp in exps:
     print 'Doing ', exp
     dat = load_PopData(exp)
     dat_c = dat['dat_c'].mean(2)
-    #dat_c = normalise_cell(dat_c)
+    dat_c = normalize(dat_c, axis=0)
     dat_w = dat['dat_w'].mean(2)
-    #dat_w = normalise_cell(dat_w)
+    dat_w = normalize(dat_w, axis=0)
 
     active = dat['active']
     d = np.where(active[:, 1])[0]
@@ -188,48 +189,21 @@ for exp in exps:
                 samples = np.minimum(y.shape[1], X.shape[1])
                 y = y[:, :samples]
                 X = X[:, :samples]
-                y = np.tile(y, [X.shape[0], 1])
+                #y = np.tile(y, [X.shape[0], 1])
                 pred_trial = np.zeros([X.shape[0], y.shape[1]])
                 trls = np.arange(X.shape[0])
                 pred_time, coefs = CV_time(clf, X, y, folds=folds, clf_args=clf_args,
                                  edges=[0, 0])
-                
-                for trl in trls:
-                    regr = clf(**clf_args)
-                    XX = X[trls != trl].reshape(-1, X.shape[2])
-                    yy = y[:-1].ravel()
-                    Xt = X[trl].reshape(-1, X.shape[2])
-                    regr.fit(XX, yy)
-                    pred = np.nan_to_num(regr.predict(Xt))
-#                    print do_thresh_corr(pred, y[0].ravel())
-                    pred_trial[trl, :] = pred
 
-##                pred_time, coefs = CV_time(clf, X, y, folds=folds, clf_args=clf_args,
-##                                 edges=[0, 0])
-#                pred_trial, coefs = CV_trial(clf, X, y, folds=X.shape[0], clf_args=clf_args,
-#                                 edges=[0, 0])
-##                for p in pred_time:
-##                    crr = do_thresh_corr(p, con_mask[0])
-##                    if crr > 0:
-##                        res= 'Predict TIME: %s, Using: %s, Dimension: %d, Crr: %.2f' %(
-##                                                       d, m, dim, crr)
-##                        print res
-
-                for i, p in enumerate(pred_trial):
-                    crr = do_thresh_corr(p, y[0])
-                    res= '%d: %s, Using: %s, Dimension: %d, Crr: %.2f' %(
-                                                       i, d, m, dim, crr)
-#                    if crr > 0:
-                    print res
-                crr = do_thresh_corr(pred_trial.ravel(), y.ravel())#, corr_type='pearsonr')
-                res= 'Predict TRIAL: %s, Using: %s, Dimension: %d, Crr: %.2f' %(
+                crr = do_thresh_corr(pred_time.T, y.T)#, corr_type='pearsonr')
+                res= 'Predict: %s, Using: %s, Dimension: %d, Crr: %.2f' %(
                                                    d, m, dim, crr)
-                
-                if crr > 0:
+                print res
+                if crr > 0.5:
                     print res
                     plt.figure(figsize=(14, 8))
                     plt.hold(True)
-                    plt.plot(pred_trial.ravel(), label='pred')
+                    plt.plot(pred_time.ravel(), label='pred')
                     plt.plot(y.ravel(), label='movie')
                     plt.legend()
                     plt.title(res)

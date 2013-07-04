@@ -70,7 +70,6 @@ def baseline(dat, baseline_samples, flatten=False):
     return np.array(all_cell), np.array(all_bs)
 
 
-
 def list_PopExps():
     pth = extern_data_path + 'Sparseness/PopulationData/Population/'
     return sorted(os.walk(pth).next()[1])

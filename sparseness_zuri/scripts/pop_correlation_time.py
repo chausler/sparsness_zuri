@@ -33,7 +33,7 @@ def do_corrs(dat, win):
         print 'trial %d' % t
         val = cell_corr(dat, win, t)
         corrs.append(val)
-    mean_corr = mean_corr(dat.mean(2), win)
+    mean_corr = cell_corr(dat.mean(2), win)
     return np.array(corrs), mean_corr
 
 d_path = data_path + 'Sparseness/POP/time_corr/'

@@ -14,6 +14,32 @@ from plotting.utils import adjust_spines, do_box_plot, do_spot_scatter_plot
 from data_utils.load_pop import load_PopData, list_PopExps
 import os
 
+try:
+    from IPython.parallel import Client
+    from IPython.parallel.error import RemoteError
+except:
+    Client = None
+    print 'Failed to find IPython.parallel - No parallel processing available'
+
+
+print 'hooraz' if Client else 'blag'
+rc = Client()
+dview = rc[:]
+dview.execute('import numpy as np')
+dview.execute('from data_utils.utils import pairwise_corr')
+print '%d engines found' % len(rc.ids)
+
+
+def cell_corr_parallel(trial):
+    corrs = np.zeros([dat.shape[0], dat.shape[0], dat.shape[1]])
+    for t in xrange(win, dat.shape[1]):
+        if len(dat.shape) > 2:
+            corrs[:, :, t] = pairwise_corr(dat[:, t - win / 2: t + win / 2 + 1,
+                                           trial])
+        else:
+            corrs[:, :, t] = pairwise_corr(dat[:, t - win / 2: t + win / 2 + 1])
+    return corrs
+
 
 def cell_corr(dat, win, trial=None):
     corrs = np.zeros([dat.shape[0], dat.shape[0], dat.shape[1]])
@@ -27,12 +53,30 @@ def cell_corr(dat, win, trial=None):
 
 
 def do_corrs(dat, win):
+    dview.push({'dat': dat, 'win': win})
+    try:
+        crrs = dview.map(cell_corr_parallel, range(dat.shape[2]))
+    except RemoteError as e:
+        print e
+        if e.engine_info:
+            print "e-info: " + str(e.engine_info)
+        if e.ename:
+            print "e-name:" + str(e.ename)
+
     corrs = []
-    trials = range(dat.shape[2])
-    for t in trials:
-        print 'trial %d' % t
-        val = cell_corr(dat, win, t)
-        corrs.append(val)
+    for c in crrs:
+        corrs.append(c)
+
+    dview.results.clear()
+    rc.purge_results('all')
+    rc.results.clear()
+
+#    corrs = []
+#    trials = range(dat.shape[2])
+#    for t in trials:
+#        print 'trial %d' % t
+#        val = cell_corr(dat, win, t)
+#        corrs.append(val)
     mean_corr = cell_corr(dat.mean(2), win)
     return np.array(corrs), mean_corr
 

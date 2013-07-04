@@ -41,12 +41,12 @@ for randomise in [None]:
         vals = []
         print 'doing ', exp_id
         if randomise is None:
-            dat_c = dat['dat_c']
-            dat_w = dat['dat_w']
+            dat_c = dat['dat_raw_c']
+            dat_w = dat['dat_raw_w']
         elif randomise == 'random':
             assert(False)
-            dat_c = dat['dat_c']
-            dat_w = dat['dat_w']
+            dat_c = dat['dat_raw_c']
+            dat_w = dat['dat_raw_w']
 
         if not os.path.exists(f_path):
             os.makedirs(f_path)

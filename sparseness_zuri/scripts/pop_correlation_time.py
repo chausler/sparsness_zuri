@@ -51,9 +51,11 @@ for exp in exps:
     dat = load_PopData(exp)
     active = dat['active']
     d = np.where(active[:, 1])[0]
-    dat_c = dat['dat_c']
-    dat_w = dat['dat_w']
+    dat_c = dat['dat_raw_c']
+    dat_w = dat['dat_raw_w']
     trial_corr_c, mean_corr_c = do_corrs(dat_c, corr_win)
-    trial_corr_w, mean_corr_c = do_corrs(dat_w, corr_win)
-    np.savez_compressed(fname, corr_c=corr_c, corr_w=corr_w)
+    trial_corr_w, mean_corr_w = do_corrs(dat_w, corr_win)
+    np.savez_compressed(fname, trial_corr_c=trial_corr_c,
+                        mean_corr_c=mean_corr_c, trial_corr_w=trial_corr_w,
+                        mean_corr_w=mean_corr_w)
 

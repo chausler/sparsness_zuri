@@ -111,8 +111,12 @@ def load_PopData(exp_id, only_active=False):
 
     dat_raw_c, bs_raw_c = baseline(dat_c, baseline_samples)
     dat_raw_w, bs_raw_w = baseline(dat_w, baseline_samples)
-    dat_c, bs_c = baseline_filt(dat_c, baseline_samples)
-    dat_w, bs_w = baseline_filt(dat_w, baseline_samples)
+    dat_c = dat_raw_c
+    bs_c = bs_raw_c
+    dat_w = dat_raw_w
+    bs_w = bs_raw_w
+#    dat_c, bs_c = baseline_filt(dat_c, baseline_samples)
+#    dat_w, bs_w = baseline_filt(dat_w, baseline_samples)
 
     mov_path = data_path + 'Sparseness/POP/'
     mov = scipy.io.loadmat(mov_path + exp_mov[exp_id] + '.mat')

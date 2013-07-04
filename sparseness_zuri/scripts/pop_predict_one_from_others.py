@@ -46,7 +46,7 @@ for exp in exps:
             continue
         print cell
         cell_res = []
-        for i, src in enumerate(['dat_c', 'dat_w']):
+        for i, src in enumerate(['dat_raw_c', 'dat_raw_w']):
             dt = dat[src]
             if i == 0 and crr_c is None:
                 try:
@@ -86,8 +86,9 @@ for exp in exps:
     res = np.array(res)
     print res.shape
     plt.figure(figsize=(16, 8))
-    plt.subplot(131)
+    plt.subplot(131, aspect='equal')
     plt.scatter(res[:, 0], res[:, 1])
+    plt.plot([0, 1], [0, 1], '--')
     plt.xlabel('Pred Corr Centre')
     plt.ylabel('Pred Corr Whole')
     plt.subplot(132)

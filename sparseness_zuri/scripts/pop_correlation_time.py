@@ -32,7 +32,7 @@ print '%d engines found' % len(rc.ids)
 
 def cell_corr_parallel(trial):
     corrs = np.zeros([dat.shape[0], dat.shape[0], dat.shape[1]])
-    for t in xrange(win, dat.shape[1]):
+    for t in xrange(win / 2, dat.shape[1] - (win / 2)):
         if len(dat.shape) > 2:
             corrs[:, :, t] = pairwise_corr(dat[:, t - win / 2: t + win / 2 + 1,
                                            trial])
@@ -43,7 +43,7 @@ def cell_corr_parallel(trial):
 
 def cell_corr(dat, win, trial=None):
     corrs = np.zeros([dat.shape[0], dat.shape[0], dat.shape[1]])
-    for t in xrange(win, dat.shape[1]):
+    for t in xrange(win / 2, dat.shape[1] - (win / 2)):
         if len(dat.shape) > 2:
             corrs[:, :, t] = pairwise_corr(dat[:, t - win / 2: t + win / 2 + 1,
                                            trial])
@@ -101,5 +101,5 @@ for exp in exps:
     trial_corr_w, mean_corr_w = do_corrs(dat_w, corr_win)
     np.savez_compressed(fname, trial_corr_c=trial_corr_c,
                         mean_corr_c=mean_corr_c, trial_corr_w=trial_corr_w,
-                        mean_corr_w=mean_corr_w)
+                        mean_corr_w=mean_corr_w, win=corr_win)
 

@@ -16,33 +16,35 @@ from data_utils.load_pop import load_PopData, list_PopExps
 import os
 
 
-def plot_corrs(c_vals, w_vals, n_cells, header, fname):
+def plot_corrs(c_vals, w_vals, mn_c_crr, mn_w_crr, n_cells, header, fname):
     fig = plt.figure(figsize=(14, 8))
     fig.set_facecolor('white')
     c_vals = average_corrs(c_vals)
     w_vals = average_corrs(w_vals)
     c_vals_mn = average_corrs(c_vals)
     w_vals_mn = average_corrs(w_vals)
+    mn_c_vals_mn = average_corrs(mn_c_crr)
+    mn_w_vals_mn = average_corrs(mn_w_crr)
 
-    ax = plt.subplot(311)
+    ax = plt.subplot(411)
     plt.hold(True)
     plt.plot(c_vals.T, '0.8')
     plt.plot(c_vals_mn, '0.4', linewidth=2)
     plt.xlim(0, c_vals.shape[1])
     adjust_spines(ax, ['bottom', 'left'])
     plt.title('Masked')
-    plt.ylabel('Mean R^2')
+    plt.ylabel('Mean R')
 
-    ax = plt.subplot(312)
+    ax = plt.subplot(412)
     plt.hold(True)
     plt.plot(w_vals.T, '0.8')
     plt.plot(w_vals_mn, '0.4', linewidth=2)
     plt.xlim(0, w_vals.shape[1])
     adjust_spines(ax, ['bottom', 'left'])
     plt.title('Whole Field')
-    plt.ylabel('Mean R^2')
+    plt.ylabel('Mean R')
 
-    ax = plt.subplot(313)
+    ax = plt.subplot(413)
     plt.hold(True)
     plt.plot(w_vals_mn, 'g', linewidth=2, label='Whole')
     plt.plot(c_vals_mn, 'k', linewidth=2, label='Centre')
@@ -51,11 +53,24 @@ def plot_corrs(c_vals, w_vals, n_cells, header, fname):
     leg.draw_frame(False)
     plt.xlim(0, c_vals.shape[1])
     adjust_spines(ax, ['bottom', 'left'])
-    plt.ylabel('Mean R^2')
+    plt.ylabel('Mean R')
     plt.xlabel('Sample')
     plt.title('Whole vs Masked: Crr: {0:.2f}'.format(crr))
 
-    plt.suptitle('%s - Intercell R^2 over Trials - #Cells: %d' %
+    ax = plt.subplot(414)
+    plt.hold(True)
+    plt.plot(mn_w_vals_mn, 'g', linewidth=2, label='Whole')
+    plt.plot(mn_c_vals_mn, 'k', linewidth=2, label='Centre')
+    crr = do_thresh_corr(mn_w_vals_mn, mn_c_vals_mn)
+    leg = plt.legend(ncol=2)
+    leg.draw_frame(False)
+    plt.xlim(0, c_vals.shape[1])
+    adjust_spines(ax, ['bottom', 'left'])
+    plt.title('Mean Whole vs Masked: Crr: {0:.2f}'.format(crr))
+    plt.ylabel('Mean R')
+    plt.xlabel('Sample')
+
+    plt.suptitle('%s - Intercell R over Trials - #Cells: %d' %
                  (header, n_cells))
     plt.subplots_adjust(left=0.05, bottom=0.05, right=0.95, top=0.9,
                                 wspace=0.2, hspace=0.25)
@@ -86,42 +101,57 @@ for fname in files:
     active = np.where(exp_dat['active'][:, 1])[0]
     rf_cells = exp_dat['rf_cells']
     dat = np.load(d_path + fname)
-    corr_c = dat["corr_c"]
-    corr_w = dat["corr_w"]
+    corr_c = dat["trial_corr_c"]
+    corr_w = dat["trial_corr_w"]
+    mean_corr_c = dat["mean_corr_c"]
+    mean_corr_w = dat["mean_corr_w"]
 
     # do all cells
     typ = 'All_Cells'
     print typ
     c_crr = []
     w_crr = []
+    mn_c_crr = []
+    mn_w_crr = []
     print 'try to predict correlation from movie features, try to predict one from another, try to predict movie features from population'
     for i in range(corr_c.shape[1]):
         for j in range(corr_c.shape[1]):
             if i < j:
                 c_crr.append(corr_c[:, i, j, :])
                 w_crr.append(corr_w[:, i, j, :])
+                mn_c_crr.append(mean_corr_c[i, j, :])
+                mn_w_crr.append(mean_corr_w[i, j, :])
     c_crr = np.array(c_crr)
     w_crr = np.array(w_crr)
+    mn_c_crr = np.array(mn_c_crr)
+    mn_w_crr = np.array(mn_w_crr)
     n_cells = corr_c.shape[1]
     fname = '%s%s_%s' % (f_path, exp, typ)
-    plot_corrs(c_crr, w_crr, n_cells, "%s %s" % (exp, typ), fname)
+    plot_corrs(c_crr, w_crr, mn_c_crr, mn_w_crr, n_cells,
+                   "%s %s" % (exp, typ), fname)
 
     # do active cells
     typ = 'Active_Cells'
     print typ
     c_crr = []
     w_crr = []
-
+    mn_c_crr = []
+    mn_w_crr = []
     for i in active:
         for j in active:
             if i < j:
                 c_crr.append(corr_c[:, i, j, :])
                 w_crr.append(corr_w[:, i, j, :])
+                mn_c_crr.append(mean_corr_c[i, j, :])
+                mn_w_crr.append(mean_corr_w[i, j, :])
     c_crr = np.array(c_crr)
     w_crr = np.array(w_crr)
+    mn_c_crr = np.array(mn_c_crr)
+    mn_w_crr = np.array(mn_w_crr)
     n_cells = len(active)
     fname = '%s%s_%s' % (f_path, exp, typ)
-    plot_corrs(c_crr, w_crr, n_cells, "%s %s" % (exp, typ), fname)
+    plot_corrs(c_crr, w_crr, mn_c_crr, mn_w_crr, n_cells,
+                   "%s %s" % (exp, typ), fname)
 
     # do rf cells
     if len(rf_cells) > 0:
@@ -129,17 +159,23 @@ for fname in files:
         print typ
         c_crr = []
         w_crr = []
-
+        mn_c_crr = []
+        mn_w_crr = []
         for i in rf_cells:
             for j in rf_cells:
                 if i < j:
                     c_crr.append(corr_c[:, i, j, :])
                     w_crr.append(corr_w[:, i, j, :])
+                    mn_c_crr.append(mean_corr_c[i, j, :])
+                    mn_w_crr.append(mean_corr_w[i, j, :])
         c_crr = np.array(c_crr)
         w_crr = np.array(w_crr)
+        mn_c_crr = np.array(mn_c_crr)
+        mn_w_crr = np.array(mn_w_crr)
         n_cells = len(rf_cells)
         fname = '%s%s_%s' % (f_path, exp, typ)
-        plot_corrs(c_crr, w_crr, n_cells, "%s %s" % (exp, typ), fname)
+        plot_corrs(c_crr, w_crr, mn_c_crr, mn_w_crr, n_cells,
+                   "%s %s" % (exp, typ), fname)
 
 
 

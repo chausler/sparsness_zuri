@@ -156,7 +156,7 @@ def plot_cell_summary(exp_type, cell, cell_mx):
     fig_path = startup.fig_path + 'Sparseness/%s/pred/best/' % (exp_type)
     if not os.path.exists(fig_path):
         os.makedirs(fig_path)
-    fname = '%s%s' % (fig_path, cell)
+    fname = '%s%s_%s' % (fig_path, exp_type, cell)
     fig.savefig(fname + '.eps')
     fig.savefig(fname + '.png')
     plt.close(fig)

@@ -219,7 +219,7 @@ for exp_type in exp_types:
         plt.title(k)
         for s, t in zip(shifts, xaxis_time):
             vals = np.array(shift_max[k][s])
-            # fisher z transform            
+            # fisher z transform
             shift_max_mn[exp_type][k].append(average_corrs(vals))
             do_spot_scatter_plot(vals, t, 'k', 25, True, mean_adjust=True)
         #do_box_plot(crrs, shifts, 'k', np.ones_like(shifts) * 0.5)
@@ -234,6 +234,19 @@ for exp_type in exp_types:
     fig4.savefig(fig_path + '%s_%s_shift_max.eps' % (str(filt), exp_type))
     fig4.savefig(fig_path + '%s_%s_shift_max.png' % (str(filt), exp_type))
     plt.close(fig4)
+
+    ps = []
+    for i in range(len(stim_types)):
+        for j in range(i + 1, len(stim_types)):
+            ps = []
+            for s in shifts:
+                val1 = np.array(shift_max[stim_types[i]][s])
+                val2 = np.array(shift_max[stim_types[j]][s])
+                _, p = scipy.stats.ttest_ind(np.arctanh(val1),
+                                                     np.arctanh(val2))
+                print exp_type, s, p
+                ps.append(p)
+    shift_max_mn[exp_type]['significant'] = ps
 
     cell_max_type[exp_type] = {}
     cell_max_time[exp_type] = {}
@@ -422,13 +435,18 @@ for i, exp_type in enumerate(exp_types):
     axes.append(ax)
     plt.title(exp_type,  fontsize=14, fontweight='bold')
     plt.hold(True)
-    for j, k in enumerate(sorted(shift_max_mn[exp_type])):
+
+    for j, k in enumerate(stim_types):
         vals = np.array(shift_max_mn[exp_type][k])
         plt.plot(xaxis_time, vals, '-o', c=colors[j], label=k[:k.find('_')])
         if vals.max() > ylim[1]:
             ylim[1] = vals.max()
         if vals.min() < ylim[0]:
             ylim[0] = vals.min()
+    for k, s in enumerate(shift_max_mn[exp_type]['significant']):
+        if s < 0.05:
+            plt.scatter(xaxis_time[k], 0.68, c='k', marker='*')
+
     if ax.is_last_row():
         adjust_spines(ax, ['left', 'bottom'])
         plt.xlabel('Shift in Time', fontsize=10, fontweight='bold')
@@ -448,6 +466,7 @@ for i, exp_type in enumerate(exp_types):
 
 ylim[0] = np.floor(ylim[0] * 10) / 10.
 ylim[1] = np.ceil(ylim[1] * 10) / 10.
+
 for ax in axes:
     ax.set_ylim(ylim)
 plt.subplots_adjust(left=0.16, bottom=0.11, right=0.98, top=0.91,

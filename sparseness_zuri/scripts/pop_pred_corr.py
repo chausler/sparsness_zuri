@@ -58,7 +58,7 @@ def classify_time(cv):
             coef = regr.coef_
         except:
             pass
-    pred = np.nan_to_num(regr.predict(Xt)).reshape([y.shape[0], len(test)])
+    pred = np.nan_to_num(regr.predict(Xt))
     return (pred, coef)
 
 
@@ -148,7 +148,8 @@ filter = [] #'120425']
 
 folds = 5
 exps = list_PopExps()
-for alpha in [0.001, 0.002, 0.005, 0.01, 0.15, 0.5, 1.][::-1]:
+d_path = data_path + 'Sparseness/POP/time_corr/'
+for alpha in [0.001, 0.002, 0.005, 0.01, 0.15, 0.5, 1.]:
     clf_args={'alpha': alpha}
     crrs = []
     for exp in exps:
@@ -156,21 +157,40 @@ for alpha in [0.001, 0.002, 0.005, 0.01, 0.15, 0.5, 1.][::-1]:
             print exp, ' not in filter, skipping'
             continue
 #        print 'Doing ', exp
-        dat = load_PopData(exp)
-        dat_c = dat['dat_c'].mean(2)
-        dat_c = normalize(dat_c, axis=0)
-        dat_w = dat['dat_w'].mean(2)
-        dat_w = normalize(dat_w, axis=0)
+
+        exp_dat = load_PopData(exp)
+        active = np.where(exp_dat['active'][:, 1])[0]
+        rf_cells = exp_dat['rf_cells']
+        try:
+            dat = np.load(d_path + exp + '.npz')
+        except:
+            print 'file not found ', exp
+            continue
+        mean_corr_c = dat["mean_corr_c"]
+        mean_corr_w = dat["mean_corr_w"]
+        win = dat['win']
+
+        c_crr = []
+        w_crr = []
+        mn_c_crr = []
+        mn_w_crr = []
+        print 'try to predict correlation from movie features, try to predict one from another, try to predict movie features from population'
+        for i in range(mean_corr_c.shape[1]):
+            for j in range(mean_corr_c.shape[1]):
+                if i < j:
+                    mn_c_crr.append(mean_corr_c[i, j, win / 2: -(win / 2)])
+                    mn_w_crr.append(mean_corr_w[i, j, win / 2: -(win / 2)])
+        dat_c = average_corrs(np.array(mn_c_crr))
+        dat_w = average_corrs(np.array(mn_w_crr))
+
     
-        active = dat['active']
-        d = np.where(active[:, 1])[0]
         lum_mask, con_mask, flow_mask, four_mask, four_mask_shape,\
                 freq_mask, orient_mask,\
                 lum_surr, con_surr, flow_surr, four_surr, four_surr_shape,\
                 freq_surr, orient_surr,\
                 lum_whole, con_whole, flow_whole, four_whole, four_whole_shape,\
                 freq_whole, orient_whole = load_parsed_movie_dat(exp, 'POP', None)
-        all_dat = {'Data': {'Centre': dat_c, 'Whole': dat_w}, 'Movie': {}}
+        all_dat = {'Data': {'Centre': dat_c, 'Whole': dat_w , 'Diff': dat_c - dat_w}, 'Movie': {}}
         all_dat['Movie']['Contrast'] = con_mask
         all_dat['Movie']['Luminence'] = lum_mask
         all_dat['Movie']['Fourier'] = np.append(four_mask.real, four_mask.imag,
@@ -180,43 +200,45 @@ for alpha in [0.001, 0.002, 0.005, 0.01, 0.15, 0.5, 1.][::-1]:
     
         for d in all_dat['Data']:
 #            print d
-            X = all_dat['Data'][d]
+            y = all_dat['Data'][d]
+            print d
             for m in all_dat['Movie']:
 #                print m
-                ys = all_dat['Movie'][m]
-                if len(ys.shape) < 3:
-                    ys = ys[:, :, np.newaxis]
+                xs = all_dat['Movie'][m]
+                if len(xs.shape) < 3:
+                    xs = xs[:, :, np.newaxis]
                 #print ys.shape
-                ys = (ys - ys.mean()) / np.std(ys)
+                xs = (xs - xs.mean()) / np.std(xs)
                 #print ys.shape
-                for dim in xrange(1, ys.shape[2]):
-                    y = ys[:, :, dim]                    
-                    samples = np.minimum(y.shape[1], X.shape[1])
-                    y = y[:, :samples]
-                    X = X[:, :samples]
-                    if np.diff(y).sum() == 0:
+                for dim in xrange(1, xs.shape[2]):
+                    X = xs[:, :, dim]
+                    samples = np.minimum(y.shape[0], X.shape[1])
+                    yy = y[win / 2: samples]
+                    X = X[:, win / 2: samples]
+
+                    if np.diff(yy).sum() == 0:
                         print 'no activity, skipping'
                         continue
                     #y = np.tile(y, [X.shape[0], 1])
-                    pred_trial = np.zeros([X.shape[0], y.shape[1]])
                     trls = np.arange(X.shape[0])
-                    pred_time, coefs = CV_time(clf, X, y, folds=folds, clf_args=clf_args,
+                    pred_time, coefs = CV_time(clf, X, yy, folds=folds,
+                                               clf_args=clf_args,
                                      edges=[0, 0])
-    
+
                     pred_time = pred_time.ravel()
-                    y = y.ravel()
-                    crr = do_thresh_corr(pred_time, y)#, corr_type='pearsonr')
+                    yy = yy.ravel()
+                    crr = do_thresh_corr(pred_time, yy ,corr_type=None)#, corr_type='pearsonr')
                     crrs.append(crr)
                     res= 'Predict: %s, Using: %s, Dimension: %d, Crr: %.2f' %(
                                                        d, m, dim, crr)
                     pred_time = (pred_time - pred_time.mean()) / np.std(pred_time)
-                    y = (y - y.mean()) / np.std(y)
-#                    print res
-                    if crr > 0.68:
+                    yy = (yy - yy.mean()) / np.std(yy)
+                    print res
+                    if crr > 0.01:
                         plt.figure(figsize=(14, 8))
                         plt.hold(True)
                         plt.plot(pred_time, label='pred')
-                        plt.plot(y, label='movie')
+                        plt.plot(yy, label='actual corr')
                         plt.legend()
                         plt.title(res)
                         plt.show()

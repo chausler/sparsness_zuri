@@ -25,6 +25,7 @@ def plot_corrs(c_vals, w_vals, mn_c_crr, mn_w_crr, n_cells, header, fname):
     w_vals_mn = average_corrs(w_vals)
     mn_c_vals_mn = average_corrs(mn_c_crr)
     mn_w_vals_mn = average_corrs(mn_w_crr)
+    print mn_c_crr.min(), mn_c_crr.max()
 
 #    ax = plt.subplot(411)
 #    plt.hold(True)
@@ -57,7 +58,7 @@ def plot_corrs(c_vals, w_vals, mn_c_crr, mn_w_crr, n_cells, header, fname):
 #    plt.xlabel('Sample')
 #    plt.title('Whole vs Masked: Crr: {0:.2f}'.format(crr))
 
-    ax = plt.subplot(411)
+    ax = plt.subplot(211)
     plt.hold(True)
     plt.plot(mn_w_vals_mn, 'g', linewidth=2, label='Whole')
     plt.plot(mn_c_vals_mn, 'k', linewidth=2, label='Centre')
@@ -66,11 +67,22 @@ def plot_corrs(c_vals, w_vals, mn_c_crr, mn_w_crr, n_cells, header, fname):
     leg.draw_frame(False)
     plt.xlim(0, c_vals.shape[1])
     adjust_spines(ax, ['bottom', 'left'])
-    plt.title('Mean Whole vs Masked: Crr: {0:.2f}'.format(crr))
+    plt.title('Mean Whole vs Masked: R^2: {0:.2f}'.format(crr))
     plt.ylabel('Mean R')
     plt.xlabel('Sample')
 
-    plt.suptitle('%s - Intercell R over Trials - #Cells: %d' %
+    ax = plt.subplot(212)
+    plt.hold(True)
+    plt.plot(mn_c_vals_mn - mn_w_vals_mn, '0.3', linewidth=2)
+    leg.draw_frame(False)
+    plt.xlim(0, c_vals.shape[1])
+    adjust_spines(ax, ['bottom', 'left'])
+    plt.title('Difference - Mean Whole vs Masked')
+    plt.ylabel('Mean R')
+    plt.xlabel('Sample')
+
+
+    plt.suptitle('%s - Intercell R^2 over Trials - #Cells: %d' %
                  (header, n_cells))
     plt.subplots_adjust(left=0.05, bottom=0.05, right=0.95, top=0.9,
                                 wspace=0.2, hspace=0.25)

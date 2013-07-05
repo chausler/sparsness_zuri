@@ -141,13 +141,13 @@ def corr_trial_to_mean_multi(dat, mn=None, edge=None):
     return crr, np.array(xcorr)
 
 
-def pairwise_corr(dat, corr_type=None):
+def pairwise_corr(dat, corr_type=None, do_abs=True):
     corrs = np.zeros([dat.shape[0], dat.shape[0]])
     for i in range(dat.shape[0]):
         for j in range(dat.shape[0]):
             if i < j:
                 corrs[i, j] = do_thresh_corr(dat[i], dat[j],
-                                             corr_type=corr_type)
+                                             corr_type=corr_type, do_abs=do_abs)
                 corrs[j, i] = corrs[i, j]
     return corrs
 

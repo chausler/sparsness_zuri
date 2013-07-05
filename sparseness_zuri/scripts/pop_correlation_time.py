@@ -35,9 +35,10 @@ def cell_corr_parallel(trial):
     for t in xrange(win / 2, dat.shape[1] - (win / 2)):
         if len(dat.shape) > 2:
             corrs[:, :, t] = pairwise_corr(dat[:, t - win / 2: t + win / 2 + 1,
-                                           trial])
+                                           trial], do_abs=False)
         else:
-            corrs[:, :, t] = pairwise_corr(dat[:, t - win / 2: t + win / 2 + 1])
+            corrs[:, :, t] = pairwise_corr(dat[:, t - win / 2: t + win / 2 + 1],
+                                           do_abs=False)
     return corrs
 
 
@@ -46,9 +47,10 @@ def cell_corr(dat, win, trial=None):
     for t in xrange(win / 2, dat.shape[1] - (win / 2)):
         if len(dat.shape) > 2:
             corrs[:, :, t] = pairwise_corr(dat[:, t - win / 2: t + win / 2 + 1,
-                                           trial])
+                                           trial], do_abs=False)
         else:
-            corrs[:, :, t] = pairwise_corr(dat[:, t - win / 2: t + win / 2 + 1])
+            corrs[:, :, t] = pairwise_corr(dat[:, t - win / 2: t + win / 2 + 1],
+                                           do_abs=False)
     return corrs
 
 

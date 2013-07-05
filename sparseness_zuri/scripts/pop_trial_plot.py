@@ -72,7 +72,7 @@ for exp in exps:
 
         ax = plt.subplot(211)
         plt.hold(True)
-        plt.plot(dtc)
+#        plt.plot(dtc)
         plt.plot(dtc.mean(1), '0.4', linewidth=2)
         plt.xlim(0, dat_c.shape[1])
         adjust_spines(ax, ['bottom', 'left'])

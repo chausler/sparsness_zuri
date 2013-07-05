@@ -1,13 +1,13 @@
 import pickle
 import startup
-from plotting.utils import adjust_spines, do_box_plot, do_spot_scatter_plot, plot_mean_std
+from plotting.utils import adjust_spines, do_box_plot, do_spot_scatter_plot, plot_mean_std, do_point_line_plot
 import pylab as plt
 import numpy as np
 from data_utils.utils import average_corrs
 from plot_classify_ephys_sub import plot_cell_summary
 import scipy.stats
 randomise = None
-filt = 0.1
+filt = 'mn' #0.1
 cell_max_time = {}
 cell_max_type = {}
 cmb_types = {}
@@ -15,7 +15,7 @@ stim_types = []
 shift_max_mn = {}
 colors = ['r', 'b', 'g']
 style = ['x', 'o', '<']
-exp_types = ['FS', 'SOM', 'PYR']
+exp_types = ['FS']#, 'SOM', 'PYR']
 crr_pred = 'crr_pred'
 shifts = np.arange(-9, 4)
 xaxis_time = np.arange(shifts.min(), shifts.max() + 1) / 30. * 1000.
@@ -117,6 +117,9 @@ for exp_type in exp_types:
     plt.subplots_adjust(left=0.03, bottom=0.05, right=0.97, top=0.95,
                        wspace=0.23, hspace=0.1)
     stim_types = sorted(stim_types)
+    stim_types_short = []
+    for s in stim_types:
+        stim_types_short.append(s[:s.find('_')])
     mx *= 1.1
     for ax in axs:
         ax.set_ylim(0, mx)
@@ -125,10 +128,10 @@ for exp_type in exp_types:
     plt.subplots_adjust(left=0.03, bottom=0.05, right=0.97, top=0.95,
                        wspace=0.23, hspace=0.1)
 
-    fig1.savefig(fig_path + '%.2f_%s_shift.eps' % (filt, exp_type))
-    fig1.savefig(fig_path + '%.2f_%s_shift.png' % (filt, exp_type))
-    fig2.savefig(fig_path + '%.2f_%s_shift_count.eps' % (filt, exp_type))
-    fig2.savefig(fig_path + '%.2f_%s_shift_count.png' % (filt, exp_type))
+    fig1.savefig(fig_path + '%s_%s_shift.eps' % (str(filt), exp_type))
+    fig1.savefig(fig_path + '%s_%s_shift.png' % (str(filt), exp_type))
+    fig2.savefig(fig_path + '%s_%s_shift_count.eps' % (str(filt), exp_type))
+    fig2.savefig(fig_path + '%s_%s_shift_count.png' % (str(filt), exp_type))
 
     plt.close(fig1)
     plt.close(fig2)
@@ -177,8 +180,8 @@ for exp_type in exp_types:
 #    for ax in crr_axs:
 #        ax.set_ylim(crr_lims + adjuster * 0.05)
 #        ax.set_xlim(np.array([shifts.min(), shifts.max()]) + adjuster)
-    fig3.savefig(fig_path + '%.2f_%s_shift_avg_count.eps' % (filt, exp_type))
-    fig3.savefig(fig_path + '%.2f_%s_shift_avg_count.png' % (filt, exp_type))
+    fig3.savefig(fig_path + '%s_%s_shift_avg_count.eps' % (str(filt), exp_type))
+    fig3.savefig(fig_path + '%s_%s_shift_avg_count.png' % (str(filt), exp_type))
     plt.close(fig3)
 
     shift_max = {}
@@ -228,8 +231,8 @@ for exp_type in exp_types:
         ax.set_xlim(np.array([xaxis_time.min(), xaxis_time.max()]) + adjuster)
     plt.subplots_adjust(left=0.06, bottom=0.05, right=0.97, top=0.95,
                        wspace=0.23, hspace=0.1)
-    fig4.savefig(fig_path + '%.2f_%s_shift_max.eps' % (filt, exp_type))
-    fig4.savefig(fig_path + '%.2f_%s_shift_max.png' % (filt, exp_type))
+    fig4.savefig(fig_path + '%s_%s_shift_max.eps' % (str(filt), exp_type))
+    fig4.savefig(fig_path + '%s_%s_shift_max.png' % (str(filt), exp_type))
     plt.close(fig4)
 
     cell_max_type[exp_type] = {}
@@ -292,8 +295,8 @@ for exp_type in exp_types:
 plt.subplots_adjust(left=0.1, bottom=0.06, right=0.97, top=0.95,
                    wspace=0.23, hspace=0.23)
 fig_path = startup.fig_path + 'Sparseness/summary/'
-fig5.savefig(fig_path + '%.2f_shift_best.eps' % (filt))
-fig5.savefig(fig_path + '%.2f_shift_best.png' % (filt))
+fig5.savefig(fig_path + '%s_shift_best.eps' % (str(filt)))
+fig5.savefig(fig_path + '%s_shift_best.png' % (str(filt)))
 
 plt.close(fig5)
 
@@ -324,8 +327,8 @@ for exp_type in exp_types:
 plt.subplots_adjust(left=0.06, bottom=0.06, right=0.97, top=0.95,
                    wspace=0.23, hspace=0.23)
 fig_path = startup.fig_path + 'Sparseness/summary/'
-fig6.savefig(fig_path + '%.2f_shift_best_hist.eps' % (filt))
-fig6.savefig(fig_path + '%.2f_shift_best_hist.png' % (filt))
+fig6.savefig(fig_path + '%s_shift_best_hist.eps' % (str(filt)))
+fig6.savefig(fig_path + '%s_shift_best_hist.png' % (str(filt)))
 #plt.show()
 plt.close(fig6)
 
@@ -362,44 +365,40 @@ for exp_type in exp_types:
 plt.subplots_adjust(left=0.06, bottom=0.15, right=0.97, top=0.95,
                    wspace=0.23, hspace=0.23)
 fig_path = startup.fig_path + 'Sparseness/summary/'
-fig7.savefig(fig_path + '%.2f_cmb_best.eps' % (filt))
-fig7.savefig(fig_path + '%.2f_cmb_best.png' % (filt))
+fig7.savefig(fig_path + '%s_cmb_best.eps' % (str(filt)))
+fig7.savefig(fig_path + '%s_cmb_best.png' % (str(filt)))
 
 plt.close(fig7)
 
 
-fig8 = plt.figure(figsize=(14, 8))
+fig8 = plt.figure(figsize=(4.5, 3.5))
+fig8.set_facecolor('white')
 plt.hold(True)
 offset = 1
 xvals = []
 xlbls = []
 ax = plt.subplot(111)
+adjust_spines(ax, ['left', 'bottom'])
 for exp_type in exp_types:
-    plt.text(offset + 0.5, 0.9, exp_type)
-    stat, p = scipy.stats.ttest_ind(
-                                cell_max_time[exp_type][stim_types[0]][:, 1],
-                                cell_max_time[exp_type][stim_types[1]][:, 1])
-    print '####################### p:', p
+    dt = []
+    offsets = offset + np.arange(len(stim_types))
+    plt.text(offsets.mean(), 1.02, exp_type, ha='center')
     for i, k in enumerate(stim_types):
-        do_spot_scatter_plot(cell_max_time[exp_type][k][:, 1], offset,
-                             c=colors[i],
-                            width=0.7, mean_adjust=True, text=False)
-        if p < 0.05 and i == 0:
-            plt.scatter(offset, 0.95, c='k',
-                    edgecolor='k',
-                    marker='*')
-        xvals.append(offset)
-        xlbls.append(k)
-        offset += 1
-    offset += 2
-plt.ylabel('corr of Responders')
-plt.ylim(-0.01, 1)
+        dt.append(cell_max_time[exp_type][k][:, 1])
+    dt = np.array(dt).T
+    do_point_line_plot(dt, offsets, mean_adjust=True, width=0.7)
+    xvals += offsets.tolist()
+    xlbls += stim_types_short
+    offset = offsets.max() + 2
+print xvals
+plt.ylabel('Corr of Cells to Prediction')
+#plt.ylim(-0.01, 1)
 plt.xticks(xvals, xlbls, rotation='vertical')
-plt.subplots_adjust(left=0.06, bottom=0.16, right=0.97, top=0.95,
+plt.subplots_adjust(left=0.12, bottom=0.2, right=0.97, top=0.95,
                    wspace=0.23, hspace=0.23)
 fig_path = startup.fig_path + 'Sparseness/summary/'
-fig8.savefig(fig_path + '%.2f_pred_summary.eps' % (filt))
-fig8.savefig(fig_path + '%.2f_pred_summary.png' % (filt))
+fig8.savefig(fig_path + '%s_pred_summary.eps' % (str(filt)))
+fig8.savefig(fig_path + '%s_pred_summary.png' % (str(filt)))
 #plt.show()
 plt.close(fig8)
 
@@ -440,7 +439,7 @@ for i, exp_type in enumerate(exp_types):
                    bbox_transform=ax.transAxes,
                    frameon=False, prop={'size': 10})
     elif i == 1:
-        plt.text(-0.13, 0.5, 'Mean correlation of responders',
+        plt.text(-0.13, 0.5, 'Mean correlation of cells to prediction',
                 rotation='vertical', va='center', ha='center',
                 transform=ax.transAxes,
                 fontsize=10, fontweight='bold')
@@ -454,7 +453,6 @@ for ax in axes:
 plt.subplots_adjust(left=0.16, bottom=0.11, right=0.98, top=0.91,
                    wspace=0.23, hspace=0.2)
 fig_path = startup.fig_path + 'Sparseness/summary/'
-fig9.savefig(fig_path + '%.2f_shift_mn.eps' % (filt))
-fig9.savefig(fig_path + '%.2f_shift_mn.png' % (filt))
-plt.show()
+fig9.savefig(fig_path + '%s_shift_mn.eps' % (str(filt)))
+fig9.savefig(fig_path + '%s_shift_mn.png' % (str(filt)))
 plt.close(fig9)

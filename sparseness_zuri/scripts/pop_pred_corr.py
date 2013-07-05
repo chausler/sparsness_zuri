@@ -11,10 +11,10 @@ from data_utils.load_pop import load_PopData, list_PopExps
 import os
 
 from data_utils.movie import load_parsed_movie_dat
-from sklearn.linear_model import LinearRegression as clf
+#from sklearn.linear_model import LinearRegression as clf
 clf_args={}
 #from sklearn.linear_model import Ridge as clf
-#from sklearn.linear_model import Lasso as clf
+from sklearn.linear_model import Lasso as clf
 clf_args={'alpha': 0.001}
 from sklearn.linear_model import LassoCV
 from sklearn.cross_validation import KFold, LeaveOneOut
@@ -150,7 +150,6 @@ folds = 5
 exps = list_PopExps()
 for alpha in [0.001, 0.002, 0.005, 0.01, 0.15, 0.5, 1.][::-1]:
     clf_args={'alpha': alpha}
-    clf_args={}
     crrs = []
     for exp in exps:
         if len(filter) > 0 and exp not in filter:
@@ -213,7 +212,7 @@ for alpha in [0.001, 0.002, 0.005, 0.01, 0.15, 0.5, 1.][::-1]:
                     pred_time = (pred_time - pred_time.mean()) / np.std(pred_time)
                     y = (y - y.mean()) / np.std(y)
 #                    print res
-                    if crr > 0.6:
+                    if crr > 0.68:
                         plt.figure(figsize=(14, 8))
                         plt.hold(True)
                         plt.plot(pred_time, label='pred')

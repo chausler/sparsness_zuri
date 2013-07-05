@@ -78,12 +78,13 @@ for randomise in [None]:  # , 'generated', 'random']:
                     vals.append(xcorr_s)
                     mx = np.maximum(mx, mn_s.max())
                 else:
-                    vals.append(0)
+#                    vals.append(0)
                     avg_s = 0
 
                 vals.append(avg_c)
                 vals.append(avg_w)
-                vals.append(avg_s)
+                if psth_s is not None:
+                    vals.append(avg_s)
                 if norm:
                     mn_c = mn_c / mx
                     std_c = std_c / mx
@@ -217,9 +218,9 @@ for randomise in [None]:  # , 'generated', 'random']:
                     adjust_spines(ax, ['bottom', 'left'])
                     ylim = plt.ylim(0, 1)
                     plt.ylim([-0.01, ylim[1]])
-                else:
-                    vals.append(0)
-                    vals.append(0)
+#                else:
+#                    vals.append(0)
+#                    vals.append(0)
 
                 ax = plt.subplot(5, 3 ,10)
                 plt.hold(True)
@@ -281,7 +282,7 @@ for randomise in [None]:  # , 'generated', 'random']:
                     adjust_spines(ax, ['bottom', 'left'])
 
                 plt.subplots_adjust(left=0.05, bottom=0.05, right=0.95, top=0.95,
-                                        wspace=0.2, hspace=0.45)
+                                        wspace=0.2, hspace=0.45)                
                 fname = '%s%s' % (f_path, d['cellid'])
                 fig.savefig(fname + '.eps')
                 fig.savefig(fname + '.png')
@@ -297,14 +298,16 @@ for randomise in [None]:  # , 'generated', 'random']:
             xvals = []
             xlbls = []
             offset = 1
-            divider = 3
+            if exp_type == 'PYR':
+                divider = 2
+            else:
+                divider = 3
             for i in range(len(groups)):
                 base_ind = i * divider
-                plt.text(offset, 1, groups[i])
                 mean_adjust = (i != 1)
                 dt = csv_vals[:, base_ind: base_ind + divider]
                 offsets = np.arange(dt.shape[1]) + offset
-                print dt.shape, offsets
+                plt.text(offsets.mean(), 1, groups[i], ha='center')                
                 do_point_line_plot(dt, offsets, width=0.7,
                                    mean_adjust=mean_adjust,
                                    alpha=0.5,
@@ -313,18 +316,19 @@ for randomise in [None]:  # , 'generated', 'random']:
 #                do_spot_scatter_plot(csv_vals[:, i], offset, col,
 #                            width=0.7, mean_adjust=mean_adjust)
 
-                
+
                 xvals += offsets.tolist()
                 xlbls += headers[1 + base_ind: base_ind + divider + 1]
                 offset += divider + 1
 
             plt.xticks(xvals, xlbls, rotation='vertical')
-            #plt.xlim(0, offset)
+            
             plt.ylim(0, 1.15)
             plt.subplots_adjust(left=0.05, bottom=0.25, right=0.98, top=0.98,
                        wspace=0.3, hspace=0.34)
 
-            fname = '%s%s' % (f_path, 'initial_summary')
+            f_path_sum = fig_path + 'Sparseness/summary/'
+            fname = '%s%s_initial_summary' % (f_path_sum, exp_type)
             fig.savefig(fname + '.eps')
             fig.savefig(fname + '.png')
             #plt.show()

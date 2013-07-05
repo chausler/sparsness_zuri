@@ -105,6 +105,7 @@ for fname in files:
     corr_w = dat["trial_corr_w"]
     mean_corr_c = dat["mean_corr_c"]
     mean_corr_w = dat["mean_corr_w"]
+    win = dat['win']
 
     # do all cells
     typ = 'All_Cells'
@@ -117,10 +118,10 @@ for fname in files:
     for i in range(corr_c.shape[1]):
         for j in range(corr_c.shape[1]):
             if i < j:
-                c_crr.append(corr_c[:, i, j, :])
-                w_crr.append(corr_w[:, i, j, :])
-                mn_c_crr.append(mean_corr_c[i, j, :])
-                mn_w_crr.append(mean_corr_w[i, j, :])
+                c_crr.append(corr_c[:, i, j, win / 2: -(win / 2)])
+                w_crr.append(corr_w[:, i, j, win / 2: -(win / 2)])
+                mn_c_crr.append(mean_corr_c[i, j, win / 2: -(win / 2)])
+                mn_w_crr.append(mean_corr_w[i, j, win / 2: -(win / 2)])
     c_crr = np.array(c_crr)
     w_crr = np.array(w_crr)
     mn_c_crr = np.array(mn_c_crr)
@@ -140,10 +141,10 @@ for fname in files:
     for i in active:
         for j in active:
             if i < j:
-                c_crr.append(corr_c[:, i, j, :])
-                w_crr.append(corr_w[:, i, j, :])
-                mn_c_crr.append(mean_corr_c[i, j, :])
-                mn_w_crr.append(mean_corr_w[i, j, :])
+                c_crr.append(corr_c[:, i, j, win / 2: -(win / 2)])
+                w_crr.append(corr_w[:, i, j, win / 2: -(win / 2)])
+                mn_c_crr.append(mean_corr_c[i, j, win / 2: -(win / 2)])
+                mn_w_crr.append(mean_corr_w[i, j, win / 2: -(win / 2)])
     c_crr = np.array(c_crr)
     w_crr = np.array(w_crr)
     mn_c_crr = np.array(mn_c_crr)
@@ -164,10 +165,10 @@ for fname in files:
         for i in rf_cells:
             for j in rf_cells:
                 if i < j:
-                    c_crr.append(corr_c[:, i, j, :])
-                    w_crr.append(corr_w[:, i, j, :])
-                    mn_c_crr.append(mean_corr_c[i, j, :])
-                    mn_w_crr.append(mean_corr_w[i, j, :])
+                    c_crr.append(corr_c[:, i, j, win / 2: -(win / 2)])
+                    w_crr.append(corr_w[:, i, j, win / 2: -(win / 2)])
+                    mn_c_crr.append(mean_corr_c[i, j, win / 2: -(win / 2)])
+                    mn_w_crr.append(mean_corr_w[i, j, win / 2: -(win / 2)])
         c_crr = np.array(c_crr)
         w_crr = np.array(w_crr)
         mn_c_crr = np.array(mn_c_crr)

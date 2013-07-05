@@ -77,7 +77,7 @@ def do_point_line_plot(data, xvals, c=['r', 'b'], width=0.2,
                                     marker='*')
                         p_offset *= -1
     plt.grid(True, axis='y')
-    plt.text(xvals[0] - r, 0.9, '#%d' % len(dd))
+    
 
 
 def plot_mean_std(xs, mn, std, title, plt_num=[1, 1, 1], legend=True,

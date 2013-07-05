@@ -30,8 +30,8 @@ def load_parsed_movie_dat(cellid, exp_type='SOM', four_downsample=None):
     con_mask = mov['con_mask']
     flow_mask = mov['flow_mask']
     four_mask = mov['four_mask']
-    freq_mask = mov['freq_mask']
-    orient_mask = mov['orient_mask']
+    freq_mask = mov['freq_mask'].astype(np.float)
+    orient_mask = mov['orient_mask'].astype(np.float)
     if four_downsample != None:
         four_mask = downsample_four(four_mask, four_downsample)
     four_mask_shape = four_mask.shape[2:]
@@ -59,17 +59,26 @@ def load_parsed_movie_dat(cellid, exp_type='SOM', four_downsample=None):
         orient_surr = None
         four_surr_shape = None
     #whole movie data
-    lum_whole = mov['lum_whole']
-    con_whole = mov['con_whole']
-    flow_whole = mov['flow_whole']
-    four_whole = mov['four_whole']
-    freq_whole = mov['freq_whole']
-    orient_whole = mov['orient_whole']
-    if four_downsample != None:
-        four_whole = downsample_four(four_whole, four_downsample)
-    four_whole_shape = four_whole.shape[2:]
-    four_whole = four_whole.reshape(four_whole.shape[0],
-                                    four_whole.shape[1], -1)
+    if 'lum_whole' in mov:
+        lum_whole = mov['lum_whole']
+        con_whole = mov['con_whole']
+        flow_whole = mov['flow_whole']
+        four_whole = mov['four_whole']
+        freq_whole = mov['freq_whole']
+        orient_whole = mov['orient_whole']
+        if four_downsample != None:
+            four_whole = downsample_four(four_whole, four_downsample)
+        four_whole_shape = four_whole.shape[2:]
+        four_whole = four_whole.reshape(four_whole.shape[0],
+                                        four_whole.shape[1], -1)
+    else:
+        lum_whole = None
+        con_whole = None
+        flow_whole = None
+        four_whole = None
+        freq_whole = None
+        orient_whole = None
+        four_whole_shape = None
     mov.close()
     return lum_mask, con_mask, flow_mask, four_mask, four_mask_shape,\
             freq_mask, orient_mask,\
@@ -86,16 +95,18 @@ if __name__ == "__main__":
         import pylab as plt
         size = 15
         ephys = load_EphysData(exp_type)
+        
         for e in ephys.values():
             cellid = e['cellid']
             mov = load_movie_data(cellid, exp_type)
-            mov = mov['masked'][0]
-            print mov.shape
-            for i in range(5):
-                plt.subplot(2, 5, i + 1)
-                plt.imshow(mov[i*10], cmap=plt.cm.gray)
-                plt.subplot(2, 5, i + 6)
-                xx = mov[i*10]
-                xx = np.array(Image.fromarray(xx).resize([size, size]).getdata()).reshape([size, size])
-                plt.imshow(xx, cmap=plt.cm.gray)
-            plt.show()
+            mov = mov['four_mask'][0]
+            print mov
+            assert False
+#            for i in range(5):
+#                plt.subplot(2, 5, i + 1)
+#                plt.imshow(mov[i*10], cmap=plt.cm.gray)
+#                plt.subplot(2, 5, i + 6)
+#                xx = mov[i*10]
+#                xx = np.array(Image.fromarray(xx).resize([size, size]).getdata()).reshape([size, size])
+#                plt.imshow(xx, cmap=plt.cm.gray)
+#            plt.show()

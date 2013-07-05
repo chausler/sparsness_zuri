@@ -232,16 +232,16 @@ for randomise in [None]:
 #                    p_offset *= -1
         xvals += offsets.tolist()
         xlbls += headers[1 + base_ind: base_ind + divider + 1]
-        plt.text(offset - 0.5, 1, groups[i])
-        offset += 2
+        plt.text(offsets.mean(), 1, groups[i], ha='center')
+        offset += 3
 
     plt.xticks(xvals, xlbls, rotation='vertical')
     #plt.xlim(0, offset + 0.5)
     plt.ylim(0, 1.15)
     plt.subplots_adjust(left=0.05, bottom=0.21, right=0.98, top=0.98,
                wspace=0.3, hspace=0.34)
-
-    fname = '%s%s' % (f_path, 'initial_summary')
+    f_path_sum = fig_path + 'Sparseness/summary/'
+    fname = '%s%s' % (f_path_sum, 'POP_initial_summary')
     fig.savefig(fname + '.eps')
     fig.savefig(fname + '.png')
     #plt.show()

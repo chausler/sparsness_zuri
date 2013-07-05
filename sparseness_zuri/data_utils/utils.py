@@ -165,8 +165,8 @@ def downsample(dat, orig_time, dwn_time, is_complex=False):
         f = interp1d(orig_time, dat.real, kind='cubic')
         rl = f(dwn_time)
         f = interp1d(orig_time, dat.imag, kind='cubic')
-        img = f(dwn_time)        
-        dat = rl + img * 1j        
+        img = f(dwn_time)
+        dat = rl + img * 1j
     else:
         f = interp1d(orig_time, dat, kind='cubic')
         dat = f(dwn_time)
@@ -175,7 +175,8 @@ def downsample(dat, orig_time, dwn_time, is_complex=False):
 
 def downsample_multi_dim(dat, orig_time, dwn_time, is_complex=False):
     dims = dat.shape
-    new_dat = np.zeros([len(dwn_time), np.array(dims[1:]).prod()])
+    new_dat = np.zeros([len(dwn_time), np.array(dims[1:]).prod()],
+                       dtype=complex)
     dat = dat.reshape(len(orig_time), -1)
     for i in xrange(dat.shape[1]):
         print 'downsample dim %d of %d' % (i, dat.shape[1])

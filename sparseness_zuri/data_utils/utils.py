@@ -18,7 +18,6 @@ def do_thresh_corr(x, y, threshold=0.05, corr_type='pearsonr', do_abs=True):
         return c
     if p > threshold or np.isnan(c):
         c = 0.
-    print c
     if do_abs:
         return np.abs(c)
     else:

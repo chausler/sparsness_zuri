@@ -64,9 +64,11 @@ def baseline(dat, baseline_samples, flatten=False):
     all_bs = []
     all_cell = []
     for cell in range(len(dat)):
-        all_cell.append(dat[cell][baseline_samples:])
-        all_bs.append(np.array([dat[cell][:baseline_samples].mean(0),
-                       np.std(dat[cell][:baseline_samples], 0)]).T)
+        mn = dat[cell][:baseline_samples].mean(0)
+        std = np.std(dat[cell][:baseline_samples], 0)
+        all_bs.append(np.array([mn, std]).T)
+        all_cell.append(dat[cell][baseline_samples:] - mn)
+
     return np.array(all_cell), np.array(all_bs)
 
 
@@ -186,7 +188,7 @@ if __name__ == "__main__":
     exps = list_PopExps()
     for exp in exps:        
         print exp
-#        d = load_PopData(exp)
+        d = load_PopData(exp)
 #
 #        rf = d['rf_cells']
 #        act = d['active'][:,1]
